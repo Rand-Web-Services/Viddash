@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#2b6cb0"/>
+      <stop offset="100%" stop-color="#3182ce"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <g fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif">
+    <text x="60" y="180" font-size="64" font-weight="700">Viddash</text>
+    <text x="60" y="260" font-size="42">Free Video Downloader</text>
+    <text x="60" y="320" font-size="28">Facebook · YouTube · TikTok · Instagram · X/Twitter</text>
+    <!-- minimal fast dash underline -->
+    <rect x="62" y="188" width="160" height="6" rx="3" fill="#9bd1ff" />
+  </g>
+</svg>

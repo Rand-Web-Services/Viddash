@@ -1,0 +1,9 @@
+Flask==3.0.3
+Werkzeug==3.0.3
+yt-dlp==2025.01.26
+Jinja2==3.1.4
+itsdangerous==2.2.0
+click==8.1.7
+requests==2.32.3
+Flask-Limiter==3.8.0
+gunicorn==22.0.0

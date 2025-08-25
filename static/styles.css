@@ -1,0 +1,3 @@
+body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+.hero { background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%); }
+.table td, .table th { vertical-align: middle; }
