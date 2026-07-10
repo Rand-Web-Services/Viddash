@@ -74,6 +74,45 @@ function startBackgroundDownload(url) {
   frame.src = url;
 }
 
+function startBackgroundPost(path, fields) {
+  if (!path) return;
+  const frameId = 'viddashDownloadFrame';
+  let frame = document.getElementById(frameId);
+  if (!frame) {
+    frame = document.createElement('iframe');
+    frame.id = frameId;
+    frame.name = frameId;
+    frame.title = 'Viddash download';
+    frame.hidden = true;
+    frame.style.display = 'none';
+    document.body.appendChild(frame);
+  }
+  const formEl = document.createElement('form');
+  formEl.method = 'POST';
+  formEl.action = path;
+  formEl.target = frame.name;
+  formEl.hidden = true;
+  Object.entries(fields || {}).forEach(([name, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    formEl.appendChild(input);
+  });
+  document.body.appendChild(formEl);
+  formEl.submit();
+  window.setTimeout(() => formEl.remove(), 1000);
+}
+
+function escapeAttribute(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function updateHint() {
   const key = platformSelect?.value || 'auto';
   platformHint.textContent = HINTS[key] || '';
@@ -154,9 +193,9 @@ function renderResults(data) {
     } else if (pageUrl) {
       const mergeParams = new URLSearchParams();
       mergeParams.set('url', pageUrl);
-      const cookiesVal = cookieInput?.value?.trim();
-      if (cookiesVal) mergeParams.set('cookies', cookiesVal);
       bestMergeBtn.href = `/api/merge?${mergeParams.toString()}`;
+      bestMergeBtn.dataset.mergeUrl = pageUrl;
+      delete bestMergeBtn.dataset.mergeFormat;
       bestMergeBtn.textContent = 'Best MP4 (with audio)';
       bestMergeBtn.classList.add('download-action');
       bestMergeBtn.dataset.requiresLogin = 'true';
@@ -211,7 +250,6 @@ function renderResults(data) {
     const quality = f.resolution || f.format_note || '';
     const ext = f.ext || '';
     const size = f.filesize_human || '';
-    const cookiesVal = cookieInput?.value?.trim();
     const isRecommended = !!(recommendedId && f.format_id === recommendedId);
     const recBadge = isRecommended ? '<span class="badge text-bg-primary ms-1">Recommended</span>' : '';
     const avBadge = f.has_audio && f.has_video
@@ -240,8 +278,8 @@ function renderResults(data) {
       const mergeParams = new URLSearchParams();
       if (pageUrl) mergeParams.set('url', pageUrl);
       if (f.format_id && f.has_video) mergeParams.set('format', f.format_id);
-      if (cookiesVal) mergeParams.set('cookies', cookiesVal);
       const mergeHref = `/api/merge?${mergeParams.toString()}`;
+      const mergeAttrs = `data-merge-url="${escapeAttribute(pageUrl)}" data-merge-format="${escapeAttribute(f.format_id || '')}"`;
       const showMerge = !!pageUrl && (f.has_video || isProgressiveRow || isVideoOnly);
       tr.innerHTML = `
         <td>${quality} ${avBadge} ${recBadge}</td>
@@ -249,7 +287,7 @@ function renderResults(data) {
         <td>${size}</td>
         <td class="text-end d-flex gap-2 justify-content-end">
           ${(!forceMerge && isProgressiveRow && proxied) ? `<a class="btn btn-sm btn-success download-action" href="${proxied}" data-requires-login="true">Direct (A+V)</a>` : ''}
-          ${(!isAudioOnlyRow && showMerge) ? `<a class="btn btn-sm btn-primary download-action" href="${mergeHref}" data-requires-login="true" data-requires-plan="pro" title="Download merged MP4 via server">MP4 (with audio)</a>` : ''}
+          ${(!isAudioOnlyRow && showMerge) ? `<a class="btn btn-sm btn-primary download-action" href="${mergeHref}" ${mergeAttrs} data-requires-login="true" data-requires-plan="pro" title="Download merged MP4 via server">MP4 (with audio)</a>` : ''}
           ${f.url ? `<button class="btn btn-sm btn-outline-secondary copy-link" data-url="${f.url}">Copy link</button>` : ''}
         </td>
       `;
@@ -296,7 +334,15 @@ function handleProtectedDownload(link, event) {
   link.classList.add('disabled');
   link.setAttribute('aria-busy', 'true');
   link.textContent = isMerged ? 'Preparing download...' : 'Starting download...';
-  startBackgroundDownload(href);
+  if (isMerged && link.dataset.mergeUrl) {
+    startBackgroundPost('/api/merge', {
+      url: link.dataset.mergeUrl,
+      format: link.dataset.mergeFormat || '',
+      cookies: cookieInput?.value?.trim() || '',
+    });
+  } else {
+    startBackgroundDownload(href);
+  }
   window.setTimeout(() => {
     link.classList.remove('disabled');
     link.removeAttribute('aria-busy');

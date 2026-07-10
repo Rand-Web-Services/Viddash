@@ -2574,12 +2574,12 @@ def proxy_download():
     return Response(limited_generate(), status=status, headers=resp_headers)
 
 
-@app.get("/api/merge")
+@app.route("/api/merge", methods=["GET", "POST"])
 @require_paid_plan("pro")
 def merge_download():
     """
     Download and merge best video+audio (or selected format) into a single MP4.
-    Query params:
+    Params:
       - url: original webpage URL (required)
       - format: optional yt-dlp format selector or format_id to prioritize
       - cookies: optional raw Cookie header string
@@ -2587,7 +2587,8 @@ def merge_download():
     started = time.monotonic()
     request_id = secrets.token_hex(6)
     user = get_current_user()
-    page_url = request.args.get("url", type=str)
+    params = request.form if request.method == "POST" else request.args
+    page_url = params.get("url", type=str)
     if not page_url:
         logger.info("merge_request_invalid request_id=%s reason=missing_url user_id=%s", request_id, user["id"] if user else None)
         return browser_error_response("Missing video URL", "Please return to the downloader and paste a video URL.", 400)
@@ -2598,8 +2599,8 @@ def merge_download():
     if is_private_host(parsed.hostname or ""):
         logger.warning("merge_request_blocked request_id=%s reason=private_host user_id=%s host=%s url_hash=%s", request_id, user["id"] if user else None, parsed.hostname, safe_url_fingerprint(page_url))
         return browser_error_response("Video host not allowed", "That video host is not allowed for security reasons.", 403)
-    cookie_string = request.args.get("cookies")
-    prefer = request.args.get("format")
+    cookie_string = params.get("cookies")
+    prefer = params.get("format")
     url_hash = safe_url_fingerprint(page_url)
     logger.info(
         "merge_start request_id=%s user_id=%s plan=%s host=%s url_hash=%s format=%s cookies=%s",
