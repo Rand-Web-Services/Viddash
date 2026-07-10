@@ -1,0 +1,31 @@
+{% set rows = rows if rows is defined else dashboard.recent_errors %}
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>User</th>
+        <th>Method</th>
+        <th>Path</th>
+        <th>Status</th>
+        <th>Duration</th>
+        <th>IP</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in rows %}
+        <tr>
+          <td>{{ item.created_at.replace('T', ' ') }}</td>
+          <td>{{ item.email or '-' }}</td>
+          <td>{{ item.method }}</td>
+          <td>{{ item.path }}</td>
+          <td><span class="activity-badge {{ 'error' if item.status_code >= 400 else 'success' }}">{{ item.status_code }}</span></td>
+          <td>{{ item.duration_ms }}ms</td>
+          <td>{{ item.ip or '-' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7">No rows yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

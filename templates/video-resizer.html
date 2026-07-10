@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Video Resizer for Social Media — Viddash</title>
+  <meta name="description" content="Resize videos for Instagram, Facebook, and more. Export to 4:5, 1:1, 9:16, and 16:9." />
+  <link rel="canonical" href="https://viddash.app/video-resizer" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+  <style>
+    .preset-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+    .preset-card.active {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
+    }
+    .preset-meta {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+  </style>
+</head>
+<body>
+  {% include "partials/site-header.html" %}
+
+  <header class="py-5 bg-light">
+    <div class="container">
+      <h1 class="display-5 fw-bold mb-3">Video Resizer for Social Platforms</h1>
+      <p class="lead text-muted">Resize and crop videos to match platform-safe aspect ratios. Example: Facebook/Instagram feeds support 4:5 for maximum height.</p>
+    </div>
+  </header>
+
+  <main class="container my-5">
+    <div class="row justify-content-center mb-5">
+      <div class="col-lg-10">
+        <div class="card shadow-sm p-3 p-md-4">
+          <form id="resizeForm" class="needs-validation">
+            <div class="mb-3">
+              <label for="fileInput" class="form-label fw-semibold">Upload video file</label>
+              <div class="input-group">
+                <input id="fileInput" type="file" class="form-control" accept="video/*" required />
+                <button id="submitBtn" class="btn btn-primary" type="submit">Resize</button>
+              </div>
+              <div class="form-text">
+                We crop to the target aspect ratio so nothing gets masked. Outputs MP4.
+                <strong id="maxSizeDisplay"></strong>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-2">
+              <div class="col-md-4">
+                <div class="preset-card active" data-preset="facebook_feed_4x5">
+                  <div class="fw-semibold">Facebook Feed (4:5)</div>
+                  <div class="preset-meta">1080×1350 — Max height without masking</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="preset-card" data-preset="instagram_feed_4x5">
+                  <div class="fw-semibold">Instagram Feed (4:5)</div>
+                  <div class="preset-meta">1080×1350 — Tallest feed ratio</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="preset-card" data-preset="instagram_square_1x1">
+                  <div class="fw-semibold">Instagram Square (1:1)</div>
+                  <div class="preset-meta">1080×1080 — Classic square</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="preset-card" data-preset="instagram_story_9x16">
+                  <div class="fw-semibold">Instagram Story/Reels (9:16)</div>
+                  <div class="preset-meta">1080×1920 — Full screen vertical</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="preset-card" data-preset="tiktok_9x16">
+                  <div class="fw-semibold">TikTok (9:16)</div>
+                  <div class="preset-meta">1080×1920 — Vertical full screen</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="preset-card" data-preset="youtube_shorts_9x16">
+                  <div class="fw-semibold">YouTube Shorts (9:16)</div>
+                  <div class="preset-meta">1080×1920 — Vertical short</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="preset-card" data-preset="facebook_landscape_16x9">
+                  <div class="fw-semibold">Facebook Landscape (16:9)</div>
+                  <div class="preset-meta">1920×1080 — Wide video</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="preset-card" data-preset="linkedin_feed_1x1">
+                  <div class="fw-semibold">LinkedIn Feed (1:1)</div>
+                  <div class="preset-meta">1080×1080 — Square post</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="preset-card" data-preset="linkedin_feed_16x9">
+                  <div class="fw-semibold">LinkedIn Feed (16:9)</div>
+                  <div class="preset-meta">1920×1080 — Landscape post</div>
+                </div>
+              </div>
+            </div>
+
+            <input type="hidden" id="presetInput" name="preset" value="facebook_feed_4x5" />
+            <div class="form-text mt-2">Files are processed locally and deleted immediately after export.</div>
+            <div id="status" class="form-text mt-2"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="alertBox" class="container mb-3" style="display:none">
+      <div class="alert" role="alert"></div>
+    </div>
+
+    <section class="mt-5" id="how-it-works">
+      <h2 class="h4 mb-4">How it works</h2>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <h5 class="fw-semibold">🎯 Crop to safe ratio</h5>
+          <p class="text-muted">We crop to the platform’s recommended aspect ratio so videos won’t be masked or letterboxed.</p>
+        </div>
+        <div class="col-md-6">
+          <h5 class="fw-semibold">⚡ Fast export</h5>
+          <p class="text-muted">Outputs MP4 with H.264 + AAC for broad compatibility.</p>
+        </div>
+        <div class="col-md-6">
+          <h5 class="fw-semibold">🔒 Privacy first</h5>
+          <p class="text-muted">Uploads are processed and discarded immediately after download.</p>
+        </div>
+        <div class="col-md-6">
+          <h5 class="fw-semibold">🧩 Multiple presets</h5>
+          <p class="text-muted">Pick Instagram, Facebook, or common ratios depending on your campaign.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  {% include "partials/site-footer.html" %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('resizeForm');
+    const fileInput = document.getElementById('fileInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusDiv = document.getElementById('status');
+    const alertBox = document.getElementById('alertBox');
+    const presetInput = document.getElementById('presetInput');
+    const maxSizeDisplay = document.getElementById('maxSizeDisplay');
+
+    const cards = Array.from(document.querySelectorAll('.preset-card'));
+    cards.forEach(card => {
+      card.addEventListener('click', () => {
+        cards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        presetInput.value = card.dataset.preset;
+      });
+    });
+
+    async function loadMaxUploadSize() {
+      try {
+        const response = await fetch('/api/max-upload-size');
+        const data = await response.json();
+        if (maxSizeDisplay) {
+          maxSizeDisplay.textContent = `Max file size: ${data.max_size_mb} MB`;
+        }
+      } catch (err) {
+        if (maxSizeDisplay) {
+          maxSizeDisplay.textContent = 'Max file size: check server settings';
+        }
+      }
+    }
+    loadMaxUploadSize();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!fileInput.files || !fileInput.files.length) {
+        showAlert('Please select a file', 'danger');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Resizing...';
+      statusDiv.textContent = 'Uploading and processing video...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('preset', presetInput.value);
+
+        const response = await fetch('/api/video/resize', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          let message = `HTTP ${response.status}`;
+          try {
+            const err = await response.json();
+            if (window.viddashHandleApiAuth?.(err)) {
+              message = 'Please sign up to continue.';
+            } else {
+              message = err.message || err.error || message;
+            }
+          } catch (e) {}
+          throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        const filename = getFilenameFromDisposition(response.headers.get('Content-Disposition')) || 'resized.mp4';
+        downloadFile(blob, filename);
+        showAlert('Video ready! Download should start automatically.', 'success');
+      } catch (err) {
+        showAlert(`Error: ${err.message}`, 'danger');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Resize';
+        statusDiv.textContent = '';
+      }
+    });
+
+    function getFilenameFromDisposition(header) {
+      if (!header) return null;
+      const match = /filename=\"?([^\";]+)\"?/i.exec(header);
+      return match ? match[1] : null;
+    }
+
+    function downloadFile(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function showAlert(message, type = 'info') {
+      const alert = alertBox.querySelector('.alert');
+      alert.textContent = message;
+      alert.className = `alert alert-${type}`;
+      alertBox.style.display = 'block';
+      setTimeout(() => {
+        alertBox.style.display = 'none';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

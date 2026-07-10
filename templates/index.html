@@ -1,118 +1,177 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ current_locale }}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Viddash — Free Video Downloader (Facebook, YouTube, TikTok)</title>
-    <meta name="description" content="Free online video downloader that supports Facebook, YouTube, TikTok, Instagram, X/Twitter and more. Merge audio+video (MP4), progressive formats, and private videos with cookies." />
+    <title>Viddash App - Free Video, Image, Audio, and AI Tools</title>
+    <meta name="description" content="Viddash App is a free all-in-one toolkit for downloading videos, converting media, resizing images, generating transcripts, clipping videos, compressing files, and creating marketing assets." />
     <link rel="canonical" href="https://viddash.app/" />
-    <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Free Video Downloader (Facebook, YouTube, TikTok)" />
-    <meta property="og:description" content="Download videos in MP4 with sound. Supports Facebook, YouTube, TikTok, Instagram, X/Twitter and more." />
+    <meta property="og:title" content="Viddash App - Free All-in-One File Toolkit" />
+    <meta property="og:description" content="Download, convert, compress, resize, clip, watermark, and transcribe media files with Viddash App." />
     <meta property="og:url" content="https://viddash.app/" />
-    <meta property="og:image" content="https://viddash.app/static/og-placeholder.svg" />
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Free Video Downloader (Facebook, YouTube, TikTok)" />
-    <meta name="twitter:description" content="Download videos with audio. Progressive and merged MP4 formats supported." />
-    <meta name="twitter:image" content="https://viddash.app/static/og-placeholder.svg" />
+    <meta property="og:image" content="https://viddash.app/static/viddash-logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Viddash App - Free All-in-One File Toolkit" />
+    <meta name="twitter:description" content="Free media tools for creators, teams, and marketers." />
+    <meta name="twitter:image" content="https://viddash.app/static/viddash-logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="/static/styles.css" rel="stylesheet" />
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
-            crossorigin="anonymous"></script>
+    <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   </head>
-  <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-      <div class="container">
-        <a class="navbar-brand fw-bold" href="/">Viddash</a>
-      </div>
-    </nav>
+  <body class="app-shell">
+    {% include "partials/site-header.html" %}
 
-    <header class="py-5 hero">
-      <div class="container text-center">
-        <h1 class="display-5 fw-bold mb-2">Video Downloader</h1>
-        <p class="lead mb-4">Download videos from many sites (YouTube, Instagram, TikTok, Facebook, X/Twitter, and more).</p>
-        <div class="row justify-content-center">
-          <div class="col-lg-8">
-            <form id="downloadForm" class="card shadow-sm p-3 p-md-4">
-              <div class="row g-3 align-items-end mb-1">
-                <div class="col-sm-4 text-start">
-                  <label for="platformSelect" class="form-label fw-semibold">Platform</label>
-                  <select id="platformSelect" class="form-select">
-                    <option value="auto" selected>Auto detect</option>
-                    <option value="youtube">YouTube</option>
-                    <option value="instagram">Instagram</option>
-                    <option value="tiktok">TikTok</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="twitter">X / Twitter</option>
-                  </select>
-                </div>
-                <div class="col-sm-8 text-start">
-                  <label for="urlInput" class="form-label fw-semibold">Paste video URL</label>
-                  <div class="input-group input-group-lg">
-                    <input id="urlInput" type="url" class="form-control" placeholder="https://example.com/video..." required />
-                    <button id="submitBtn" class="btn btn-primary" type="submit">Download</button>
-                  </div>
-                </div>
-              </div>
-              <div id="platformHint" class="text-start small text-muted mb-2"></div>
-              <div class="mt-3 text-start">
-                <label for="cookieInput" class="form-label mb-1">Optional cookies (for private videos)</label>
-                <input id="cookieInput" type="text" class="form-control" placeholder="e.g. c_user=...; xs=...; datr=..." />
-                <div class="form-text">Provide a raw Cookie header string. Only use your own cookies and keep them secure.</div>
-              </div>
-              <div class="form-text mt-2">We do not store your links. Use responsibly and respect copyright and platform terms.</div>
-            </form>
+    <header class="hero" id="converter">
+      <div class="app-container hero-grid">
+        <section class="hero-copy">
+          <div class="eyebrow">{{ t('100% Free • No Sign Up Required') }}</div>
+          <h1>{{ t('Your All-in-One') }} <span>{{ t('File Conversion') }}</span> Toolkit</h1>
+          <p>{{ t('Convert, compress, download, transcribe, resize, watermark, and edit your media instantly. Fast, private, and ready for real creator workflows.') }}</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="#video-tool-form">
+              {{ t('Start Converting Now') }}
+              <i data-lucide="arrow-right"></i>
+            </a>
+            <a class="btn btn-outline-secondary btn-lg" href="#popular">{{ t('Explore All Tools') }}</a>
           </div>
-        </div>
-        <div id="alertBox" class="container mt-3" style="display:none">
-          <div class="alert" role="alert"></div>
-        </div>
+          <div class="trust-row" aria-label="Viddash benefits">
+            <div><i data-lucide="settings"></i><strong>50+ Tools</strong><span>All in one place</span></div>
+            <div><i data-lucide="shield-check"></i><strong>Secure & Private</strong><span>Your files stay yours</span></div>
+            <div><i data-lucide="gauge"></i><strong>Fast & Reliable</strong><span>Instant processing</span></div>
+            <div><i data-lucide="user-round-x"></i><strong>No Sign Up</strong><span>Start right away</span></div>
+          </div>
+        </section>
 
-        <!-- Ad: Top placement under hero form -->
-        <div class="container mt-3">
-          <ins class="adsbygoogle"
-               style="display:block"
-               data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-               data-ad-slot="0000000000"
-               data-ad-format="auto"
-               data-full-width-responsive="true"></ins>
-        </div>
-        <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+        <section class="converter-card" id="video-tool-form" aria-label="Video downloader">
+          <div class="tool-tabs" role="tablist" aria-label="Main tools">
+            <button class="active" type="button" data-tool-tab="download">Video URL</button>
+            <button type="button" data-tool-tab="image">Images</button>
+          </div>
+
+          <form id="downloadForm" class="tool-pane active" data-tool-pane="download">
+            <div class="dropzone url-drop">
+              <i data-lucide="cloud-download"></i>
+              <strong>Paste your video link</strong>
+              <span>Resolve available downloads from YouTube, TikTok, Facebook, Instagram, X, and more.</span>
+              <div class="input-row">
+                <input id="urlInput" type="url" class="form-control" placeholder="https://example.com/video..." required />
+                <button id="submitBtn" class="btn btn-primary" type="submit">Download</button>
+              </div>
+            </div>
+            <div class="compact-grid">
+              <label>
+                <span>Platform</span>
+                <select id="platformSelect" class="form-select">
+                  <option value="auto" selected>Auto detect</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="twitter">X / Twitter</option>
+                </select>
+              </label>
+              <label>
+                <span>Quick preset</span>
+                <select id="presetSelect" class="form-select">
+                  <option value="best" selected>Best quality MP4</option>
+                  <option value="small">Smallest size</option>
+                  <option value="audio">Audio only</option>
+                </select>
+              </label>
+            </div>
+            <div class="video-presets d-none" aria-hidden="true">
+              <button type="button" class="preset-btn" data-preset="best">Best quality MP4</button>
+              <button type="button" class="preset-btn" data-preset="small">Smallest size</button>
+              <button type="button" class="preset-btn" data-preset="audio">Audio only</button>
+            </div>
+            <button id="advancedToggle" class="link-button" type="button" aria-expanded="false">Private video cookies</button>
+            <div id="advancedPanel" class="advanced-panel" hidden>
+              <label for="cookieInput" class="form-label">Optional cookies</label>
+              <input id="cookieInput" type="text" class="form-control" placeholder="c_user=...; xs=...; datr=..." />
+              <div class="form-text">Only paste cookies you own. They are used for this request only.</div>
+            </div>
+            <div id="platformHint" class="form-text"></div>
+            <div id="videoStatus" class="form-text"></div>
+          </form>
+
+          <form id="imageForm" class="tool-pane" data-tool-pane="image">
+            <div id="imageDrop" class="dropzone">
+              <i data-lucide="cloud-upload"></i>
+              <strong>Drop your images here</strong>
+              <span>or click to browse. Convert PNG to WebP, resize, and export SEO-friendly files.</span>
+              <input id="imageInput" type="file" class="form-control" accept="image/*" multiple />
+            </div>
+            <div class="compact-grid">
+              <label>
+                <span>Width</span>
+                <input id="imgWidth" type="number" class="form-control" placeholder="1200" min="1" />
+              </label>
+              <label>
+                <span>Height</span>
+                <input id="imgHeight" type="number" class="form-control" placeholder="630" min="1" />
+              </label>
+            </div>
+            <div id="presetBar" class="preset-pills">
+              <button type="button" data-format="webp" data-clear-size="true">PNG to WebP</button>
+              <button type="button" data-w="1200" data-h="630">Facebook</button>
+              <button type="button" data-w="1080" data-h="1080">Instagram</button>
+              <button type="button" data-w="1080" data-h="1920">Stories</button>
+              <button type="button" data-w="1600" data-h="900">YouTube</button>
+            </div>
+            <div class="compact-grid align-items-end">
+              <label>
+                <span>Format</span>
+                <select id="imgFormat" class="form-select">
+                  <option value="original" selected>Keep original</option>
+                  <option value="webp">WebP</option>
+                  <option value="jpg">JPG</option>
+                  <option value="png">PNG</option>
+                </select>
+              </label>
+              <label>
+                <span>Quality <b id="imgQualityVal">82</b></span>
+                <input id="imgQuality" type="range" class="form-range" min="40" max="95" value="82" />
+              </label>
+            </div>
+            <button id="imageSubmit" class="btn btn-primary w-100" type="submit">Resize & Download</button>
+            <div id="imageProgress" class="progress-card" hidden>
+              <div class="progress-card-head">
+                <strong id="imageProgressLabel">Preparing files...</strong>
+                <span id="imageProgressPercent">0%</span>
+              </div>
+              <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="imageProgressBar"></div>
+              </div>
+              <div id="imageProgressDetail" class="progress-detail">Max batch: 100 MB total, 25 MB per image.</div>
+            </div>
+            <div id="imageStatus" class="form-text"></div>
+          </form>
+        </section>
       </div>
     </header>
 
-    <main class="container my-5">
-      <div id="result" class="d-none">
-        <div class="card shadow-sm mb-4">
-          <div class="row g-0">
-            <div class="col-md-4 text-center p-3">
-              <img id="thumb" src="" alt="thumbnail" class="img-fluid rounded" loading="lazy" />
-            </div>
-            <div class="col-md-8 p-3">
-              <h5 id="title" class="fw-semibold"></h5>
-              <div class="text-muted small" id="meta"></div>
+    <main>
+      <div id="alertBox" class="app-container alert-holder" style="display:none">
+        <div class="alert" role="alert"></div>
+      </div>
+
+      <section id="result" class="app-container results d-none">
+        <div class="result-card">
+          <img id="thumb" src="" alt="Video thumbnail" loading="lazy" />
+          <div>
+            <h2 id="title"></h2>
+            <p id="meta"></p>
+            <div class="result-actions">
+              <a id="bestMergeBtn" class="btn btn-primary btn-sm d-none" href="#" rel="noopener noreferrer">Best MP4</a>
+              <button id="copyPageBtn" class="btn btn-outline-secondary btn-sm d-none" type="button">Copy page link</button>
             </div>
           </div>
         </div>
-
-        <!-- Ad: Above results table -->
-        <div class="mb-3">
-          <ins class="adsbygoogle"
-               style="display:block"
-               data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-               data-ad-slot="1111111111"
-               data-ad-format="auto"
-               data-full-width-responsive="true"></ins>
-        </div>
-        <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
-
-        <div class="table-responsive">
+        <div class="result-table">
           <table class="table align-middle">
             <thead>
               <tr>
@@ -125,84 +184,84 @@
             <tbody id="formats"></tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      <section class="mt-5">
-        <h2 class="h4">FAQ</h2>
-        <p class="mb-1"><strong>Why some links fail?</strong> Private or age-restricted videos may require cookies/authentication.</p>
-        <p class="mb-1"><strong>Is FFmpeg required?</strong> Only for merging separate audio/video; direct formats work without it.</p>
+      <section class="app-container section-block" id="popular">
+        <div class="section-head">
+          <h2>Popular Conversions</h2>
+          <a href="#tools">View all tools <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div class="tool-grid">
+          <a class="tool-card red" href="/?target=image">
+            <i data-lucide="image"></i>
+            <strong>Image Tools</strong>
+            <span>Convert, resize, compress images</span>
+          </a>
+          <a class="tool-card blue" href="/transcript-generator">
+            <i data-lucide="file-text"></i>
+            <strong>Document Tools</strong>
+            <span>Captions, transcripts, exports</span>
+          </a>
+          <a class="tool-card purple" href="/video-to-audio">
+            <i data-lucide="file-video"></i>
+            <strong>Video Tools</strong>
+            <span>Convert, compress, edit videos</span>
+          </a>
+          <a class="tool-card orange" href="/video-to-audio">
+            <i data-lucide="music"></i>
+            <strong>Audio Tools</strong>
+            <span>Convert, extract, edit audio files</span>
+          </a>
+          <a class="tool-card gold" href="/video-compress">
+            <i data-lucide="archive"></i>
+            <strong>Compress Tools</strong>
+            <span>Reduce file size for sharing</span>
+          </a>
+          <a class="tool-card teal" href="/utm-builder">
+            <i data-lucide="link"></i>
+            <strong>Web Tools</strong>
+            <span>UTM, URL, and marketing utilities</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="app-container section-block" id="tools">
+        <div class="section-head centered">
+          <h2>Powerful Features</h2>
+        </div>
+        <div class="feature-grid">
+          <a href="/video-clipper"><i data-lucide="scissors"></i><strong>Video Clipper</strong><span>Cut highlights by timestamp</span></a>
+          <a href="/video-export"><i data-lucide="panels-top-left"></i><strong>Multi-Platform Export</strong><span>9:16, 4:5, 1:1, and 16:9</span></a>
+          <a href="/video-compress"><i data-lucide="minimize-2"></i><strong>Batch Compression</strong><span>Reduce size for web and ads</span></a>
+          <a href="/video-watermark"><i data-lucide="badge-check"></i><strong>Brand Watermark</strong><span>Add logo or text overlays</span></a>
+          <a href="/video-thumbnails"><i data-lucide="layout-grid"></i><strong>Auto Thumbnails</strong><span>Generate frame grids and previews</span></a>
+        </div>
+      </section>
+
+      <section class="app-container stats">
+        <div><i data-lucide="file"></i><strong>5M+</strong><span>Files Converted</span></div>
+        <div><i data-lucide="timer-reset"></i><strong>120+</strong><span>Formats Supported</span></div>
+        <div><i data-lucide="settings"></i><strong>99.9%</strong><span>Uptime</span></div>
+        <div><i data-lucide="star"></i><strong>5 Star</strong><span>User Rating</span></div>
       </section>
     </main>
 
-    <footer class="py-4 border-top text-center text-muted small">
-      <div class="container">
-        &copy; <span id="year"></span> Viddash. For educational use.
-        <div class="mt-2">
-          <a href="/privacy" class="me-3">Privacy</a>
-          <a href="/terms" class="me-3">Terms</a>
-          <a href="/dmca">DMCA</a>
-        </div>
-      </div>
-    </footer>
+    <nav class="mobile-bottom" aria-label="Mobile navigation">
+      <a class="active" href="/"><i data-lucide="home"></i><span>Home</span></a>
+      <a href="#tools"><i data-lucide="layout-grid"></i><span>Tools</span></a>
+      <a href="/transcript-generator"><i data-lucide="sparkles"></i><span>AI</span></a>
+      <a href="/video-thumbnails"><i data-lucide="clock"></i><span>History</span></a>
+      <a href="/privacy"><i data-lucide="more-horizontal"></i><span>More</span></a>
+    </nav>
 
-    <!-- Cookie Consent Banner -->
-    <div id="cookieConsent" class="position-fixed bottom-0 start-50 translate-middle-x mb-3" style="z-index:1050; display:none;">
-      <div class="card shadow-sm" style="max-width: 720px;">
-        <div class="card-body d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
-          <div class="small text-muted text-start">
-            We use cookies for analytics and personalized ads. By using this site, you agree to our <a href="/privacy">Privacy Policy</a>.
-          </div>
-          <div class="ms-md-auto d-flex gap-2">
-            <button id="cookieAccept" class="btn btn-sm btn-primary">Accept</button>
-            <a href="/privacy" class="btn btn-sm btn-outline-secondary">Learn more</a>
-          </div>
-        </div>
-      </div>
-    </div>
+    {% include "partials/site-footer.html" %}
 
-    <script src="/static/main.js"></script>
+    <script src="/static/main.js?v=2.3"></script>
     <script>
       document.getElementById('year').textContent = new Date().getFullYear();
-      // Simple cookie consent
-      (function(){
-        try {
-          const key = 'cookieConsentAccepted';
-          const banner = document.getElementById('cookieConsent');
-          const btn = document.getElementById('cookieAccept');
-          if (!localStorage.getItem(key)) {
-            banner.style.display = 'block';
-          }
-          btn?.addEventListener('click', function(){
-            localStorage.setItem(key, '1');
-            banner.style.display = 'none';
-          });
-        } catch (e) {}
-      })();
-    </script>
-    <!-- JSON-LD FAQ -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Why some links fail?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Private or age-restricted videos may require cookies/authentication. Paste your cookies in the optional field."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is FFmpeg required?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Only for merging separate audio/video (server-side). Direct progressive formats work without it."
-          }
-        }
-      ]
-    }
+      window.addEventListener('DOMContentLoaded', function () {
+        if (window.lucide) window.lucide.createIcons();
+      });
     </script>
   </body>
 </html>

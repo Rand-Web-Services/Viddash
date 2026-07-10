@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Video Transcript Generator - Free Online Transcriber</title>
+  <meta name="description" content="Free video transcript generator. Extract captions from YouTube, TikTok, and other videos. AI-powered audio transcription using Whisper. Download SRT, VTT, TXT, or JSON formats.">
+  <link rel="canonical" href="https://viddash.app/transcript-generator" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+  <style>
+    .transcript-container {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      max-height: 500px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Courier New', monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .transcript-segment {
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .transcript-segment:last-child {
+      border-bottom: none;
+    }
+    .segment-time {
+      font-size: 0.85rem;
+      color: #6c757d;
+      font-weight: bold;
+    }
+    .segment-text {
+      margin-top: 0.5rem;
+      color: #212529;
+    }
+    .format-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .format-btn {
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  {% include "partials/site-header.html" %}
+
+  <header class="py-5 bg-light">
+    <div class="container">
+      <h1 class="display-5 fw-bold mb-3">Video Transcript Generator</h1>
+      <p class="lead text-muted">Extract transcripts from any video. Auto-detects captions or uses AI to transcribe audio. Download in SRT, VTT, TXT, or JSON format.</p>
+    </div>
+  </header>
+
+  <main class="container my-5">
+    <!-- Transcript Form -->
+    <div class="row justify-content-center mb-5">
+      <div class="col-lg-9">
+        <div class="card shadow-sm p-3 p-md-4">
+          <!-- Tabs for URL vs File -->
+          <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-pane" type="button" role="tab" aria-controls="url-pane" aria-selected="true">
+                From URL
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-pane" type="button" role="tab" aria-controls="file-pane" aria-selected="false">
+                Upload File
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+            <!-- URL Tab -->
+            <div class="tab-pane fade show active" id="url-pane" role="tabpanel" aria-labelledby="url-tab">
+              <form id="transcriptForm" class="needs-validation">
+                <div class="mb-3">
+                  <label for="urlInput" class="form-label fw-semibold">Paste video URL</label>
+                  <div class="input-group input-group-lg">
+                    <input id="urlInput" type="url" class="form-control" placeholder="https://youtube.com/watch?v=... or https://tiktok.com/@..." />
+                    <button id="submitBtn" class="btn btn-primary" type="submit">Generate Transcript</button>
+                  </div>
+                  <div class="form-text">Supports YouTube, TikTok, Facebook, Instagram, X/Twitter, and other platforms.</div>
+                </div>
+
+                <div class="mt-3">
+                  <button id="advancedToggle" class="btn btn-sm btn-outline-secondary" type="button" aria-expanded="false">Advanced options</button>
+                </div>
+
+                <div id="advancedPanel" class="advanced-panel mt-3" hidden>
+                  <div class="mb-3">
+                    <label for="languageInput" class="form-label">Language (optional)</label>
+                    <input id="languageInput" type="text" class="form-control" placeholder="e.g., en, es, fr, de" />
+                    <div class="form-text">ISO 639-1 language code. Leave empty for auto-detect.</div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="cookieInput" class="form-label">Cookies (for private videos)</label>
+                    <input id="cookieInput" type="text" class="form-control" placeholder="e.g., c_user=...; xs=...; datr=..." />
+                    <div class="form-text">Provide a raw Cookie header string for private/restricted videos.</div>
+                  </div>
+                </div>
+
+                <div class="form-text mt-2">We do not store your links or transcripts. Use responsibly and respect copyrights.</div>
+                <div id="transcriptStatus" class="form-text mt-2"></div>
+              </form>
+            </div>
+
+            <!-- File Upload Tab -->
+            <div class="tab-pane fade" id="file-pane" role="tabpanel" aria-labelledby="file-tab">
+              <form id="fileTranscriptForm" class="needs-validation">
+                <div class="mb-3">
+                  <label for="fileInput" class="form-label fw-semibold">Select video or audio file</label>
+                  <div class="input-group">
+                    <input id="fileInput" type="file" class="form-control" accept="video/*,audio/*" />
+                    <button id="fileSubmitBtn" class="btn btn-primary" type="submit">Generate Transcript</button>
+                  </div>
+                  <div class="form-text">
+                    Supported formats: MP4, WebM, AVI, MOV, MKV, WAV, MP3, M4A, FLAC, and more.
+                    <strong id="maxSizeDisplay"></strong>
+                  </div>
+                </div>
+
+                <div class="progress mb-3" id="uploadProgress" style="display: none;">
+                  <div class="progress-bar progress-bar-striped progress-bar-animated" id="uploadProgressBar" role="progressbar" style="width: 0%"></div>
+                </div>
+
+                <div class="mt-3">
+                  <button id="advancedToggleFile" class="btn btn-sm btn-outline-secondary" type="button" aria-expanded="false">Advanced options</button>
+                </div>
+
+                <div id="advancedPanelFile" class="advanced-panel mt-3" hidden>
+                  <div class="mb-3">
+                    <label for="languageInputFile" class="form-label">Language (optional)</label>
+                    <input id="languageInputFile" type="text" class="form-control" placeholder="e.g., en, es, fr, de" />
+                    <div class="form-text">ISO 639-1 language code. Leave empty for auto-detect.</div>
+                  </div>
+                </div>
+
+                <div class="form-text mt-2">Files are processed locally and deleted immediately after transcription.</div>
+                <div id="fileTranscriptStatus" class="form-text mt-2"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Box -->
+    <div id="alertBox" class="container mb-3" style="display:none">
+      <div class="alert" role="alert"></div>
+    </div>
+
+    <!-- Transcript Result -->
+    <div id="result" class="d-none">
+      <div class="row justify-content-center">
+        <div class="col-lg-9">
+          <!-- Metadata -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-9">
+                  <h5 id="videoTitle" class="card-title fw-semibold mb-2"></h5>
+                  <div id="metadata" class="text-muted small"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Format Selection -->
+          <div class="format-tabs">
+            <button type="button" class="btn btn-sm btn-outline-secondary format-btn format-option" data-format="json">JSON</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary format-btn format-option" data-format="txt">Plain Text</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary format-btn format-option" data-format="srt">SRT (Subtitle)</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary format-btn format-option" data-format="vtt">VTT (WebVTT)</button>
+            <button type="button" class="btn btn-sm btn-primary format-btn" id="downloadBtn">Download</button>
+          </div>
+
+          <!-- Transcript Display -->
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <h6 class="mb-0">Transcript</h6>
+            </div>
+            <div id="transcriptContent" class="transcript-container"></div>
+          </div>
+
+          <!-- Copy & Actions -->
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="copyBtn">Copy to clipboard</button>
+            <a href="/" class="btn btn-outline-secondary btn-sm">Back to downloader</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Section -->
+    <section class="mt-5" id="how-it-works">
+      <h2 class="h4 mb-4">How it works</h2>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <h5 class="fw-semibold">📹 Hybrid Approach</h5>
+          <p class="text-muted">We first try to extract existing captions from the video (fast and free). If no captions are available, we use AI-powered audio transcription.</p>
+        </div>
+        <div class="col-md-6">
+          <h5 class="fw-semibold">🎙️ Better Transcription</h5>
+          <p class="text-muted">Uses OpenAI's Whisper model for accurate audio-to-text conversion. Works with videos in any language.</p>
+        </div>
+        <div class="col-md-6">
+          <h5 class="fw-semibold">📥 Multiple Formats</h5>
+          <p class="text-muted">Download transcripts as JSON (with timing), SRT (for video editing), VTT (for web), or plain text.</p>
+        </div>
+        <div class="col-md-6">
+          <h5 class="fw-semibold">🔒 Privacy First</h5>
+          <p class="text-muted">Transcripts and videos are never stored. Everything is processed and discarded immediately.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="mt-5">
+      <h2 class="h4 mb-4">Frequently Asked Questions</h2>
+      <div class="accordion" id="faqAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+              What platforms are supported?
+            </button>
+          </h2>
+          <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              We support any video platform that yt-dlp can handle, including YouTube, TikTok, Facebook, Instagram, X/Twitter, and many others.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+              How accurate is the transcription?
+            </button>
+          </h2>
+          <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              When captions are available, we extract them directly with 100% accuracy. For audio transcription, accuracy depends on audio quality and language. Whisper typically achieves 95%+ accuracy for clear English audio.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+              How long does it take?
+            </button>
+          </h2>
+          <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Caption extraction is instant (seconds). Audio transcription takes 1-2 minutes per 10 minutes of video on average.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+              What's the difference between the export formats?
+            </button>
+          </h2>
+          <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              <ul class="mb-0">
+                <li><strong>JSON:</strong> Full data with timing info for each word/segment</li>
+                <li><strong>SRT:</strong> Standard subtitle format, compatible with video editors</li>
+                <li><strong>VTT:</strong> Web video text tracks (for embedding in HTML5 video)</li>
+                <li><strong>TXT:</strong> Plain text, just the words without timing</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+              Can I transcribe private videos?
+            </button>
+          </h2>
+          <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Yes! If you have access to the video, you can paste your session cookies in the Advanced Options. We support YouTube, Facebook, and other platforms' authentication cookies.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  {% include "partials/site-footer.html" %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('transcriptForm');
+    const urlInput = document.getElementById('urlInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusDiv = document.getElementById('transcriptStatus');
+    const alertBox = document.getElementById('alertBox');
+    const resultDiv = document.getElementById('result');
+    const advancedToggle = document.getElementById('advancedToggle');
+    const advancedPanel = document.getElementById('advancedPanel');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const formatOptions = document.querySelectorAll('.format-option');
+    const transcriptContent = document.getElementById('transcriptContent');
+
+    let currentTranscriptData = null;
+    let currentFormat = 'json';
+
+    // Advanced options toggle
+    advancedToggle.addEventListener('click', () => {
+      const isExpanded = advancedToggle.getAttribute('aria-expanded') === 'true';
+      advancedPanel.hidden = isExpanded;
+      advancedToggle.setAttribute('aria-expanded', !isExpanded);
+    });
+
+    // Format selection
+    formatOptions.forEach(btn => {
+      btn.addEventListener('click', () => {
+        formatOptions.forEach(b => b.classList.remove('btn-primary'));
+        formatOptions.forEach(b => b.classList.add('btn-outline-secondary'));
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-primary');
+        currentFormat = btn.dataset.format;
+        displayTranscript();
+      });
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const url = urlInput.value.trim();
+      if (!url) {
+        showAlert('Please enter a video URL', 'danger');
+        return;
+      }
+
+      const language = document.getElementById('languageInput').value.trim() || null;
+      const cookies = document.getElementById('cookieInput').value.trim() || null;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Generating...';
+      statusDiv.textContent = 'Processing video...';
+      resultDiv.classList.add('d-none');
+
+      try {
+        const response = await fetch('/api/transcribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url,
+            language,
+            cookies,
+            format: 'json'
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          if (window.viddashHandleApiAuth?.(error)) {
+            return;
+          }
+          throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        currentTranscriptData = await response.json();
+
+        if (!currentTranscriptData.success) {
+          throw new Error(currentTranscriptData.error || 'Failed to generate transcript');
+        }
+
+        displayResult();
+        showAlert('Transcript generated successfully!', 'success');
+      } catch (error) {
+        showAlert(`Error: ${error.message}`, 'danger');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Generate Transcript';
+        statusDiv.textContent = '';
+      }
+    });
+
+    function displayResult() {
+      if (!currentTranscriptData) return;
+
+      document.getElementById('videoTitle').textContent = currentTranscriptData.title || 'Transcript';
+      document.getElementById('metadata').innerHTML = `
+        <div>Source: <strong>${currentTranscriptData.source === 'captions' ? 'Extracted Captions' : 'AI Transcription'}</strong></div>
+        <div>Language: <strong>${currentTranscriptData.language || 'Unknown'}</strong></div>
+      `;
+
+      displayTranscript();
+      resultDiv.classList.remove('d-none');
+      window.scrollTo({ top: resultDiv.offsetTop - 100, behavior: 'smooth' });
+    }
+
+    function displayTranscript() {
+      if (!currentTranscriptData) return;
+
+      transcriptContent.innerHTML = '';
+
+      if (currentFormat === 'json') {
+        transcriptContent.textContent = JSON.stringify(currentTranscriptData, null, 2);
+      } else if (currentFormat === 'txt') {
+        transcriptContent.textContent = currentTranscriptData.transcript;
+      } else if (currentFormat === 'srt') {
+        transcriptContent.innerHTML = '';
+        const segments = currentTranscriptData.segments || [];
+        segments.forEach((seg, i) => {
+          const div = document.createElement('div');
+          div.className = 'transcript-segment';
+          const startTime = formatTime(seg.start);
+          const endTime = formatTime(seg.end);
+          div.innerHTML = `
+            <div class="segment-time">${i + 1}</div>
+            <div class="segment-time">${startTime} --> ${endTime}</div>
+            <div class="segment-text">${escapeHtml(seg.text)}</div>
+          `;
+          transcriptContent.appendChild(div);
+        });
+      } else if (currentFormat === 'vtt') {
+        let vttContent = 'WEBVTT\n\n';
+        const segments = currentTranscriptData.segments || [];
+        segments.forEach(seg => {
+          vttContent += `${formatTime(seg.start)} --> ${formatTime(seg.end)}\n${seg.text}\n\n`;
+        });
+        transcriptContent.textContent = vttContent;
+      }
+    }
+
+    function formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      const ms = Math.floor((seconds % 1) * 1000);
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    copyBtn.addEventListener('click', async () => {
+      const text = transcriptContent.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      } catch (err) {
+        alert('Failed to copy to clipboard');
+      }
+    });
+
+    downloadBtn.addEventListener('click', async () => {
+      if (!currentTranscriptData) return;
+
+      const format = currentFormat;
+      let content, filename, mimeType;
+
+      if (format === 'json') {
+        content = JSON.stringify(currentTranscriptData, null, 2);
+        filename = 'transcript.json';
+        mimeType = 'application/json';
+      } else if (format === 'txt') {
+        content = currentTranscriptData.transcript;
+        filename = 'transcript.txt';
+        mimeType = 'text/plain';
+      } else if (format === 'srt') {
+        try {
+          const response = await fetch('/api/transcribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url: urlInput.value,
+              format: 'srt'
+            })
+          });
+          if (response.ok) {
+            const blob = await response.blob();
+            downloadFile(blob, 'transcript.srt');
+            return;
+          } else {
+            const error = await response.json().catch(() => null);
+            if (window.viddashHandleApiAuth?.(error)) return;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+        content = convertToSRT();
+        filename = 'transcript.srt';
+        mimeType = 'text/plain';
+      } else if (format === 'vtt') {
+        try {
+          const response = await fetch('/api/transcribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url: urlInput.value,
+              format: 'vtt'
+            })
+          });
+          if (response.ok) {
+            const blob = await response.blob();
+            downloadFile(blob, 'transcript.vtt');
+            return;
+          } else {
+            const error = await response.json().catch(() => null);
+            if (window.viddashHandleApiAuth?.(error)) return;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+        content = convertToVTT();
+        filename = 'transcript.vtt';
+        mimeType = 'text/plain';
+      }
+
+      if (content) {
+        const blob = new Blob([content], { type: mimeType });
+        downloadFile(blob, filename);
+      }
+    });
+
+    function convertToSRT() {
+      let srt = '';
+      const segments = currentTranscriptData.segments || [];
+      segments.forEach((seg, i) => {
+        srt += `${i + 1}\n${formatTime(seg.start)} --> ${formatTime(seg.end)}\n${seg.text}\n\n`;
+      });
+      return srt;
+    }
+
+    function convertToVTT() {
+      let vtt = 'WEBVTT\n\n';
+      const segments = currentTranscriptData.segments || [];
+      segments.forEach(seg => {
+        vtt += `${formatTime(seg.start)} --> ${formatTime(seg.end)}\n${seg.text}\n\n`;
+      });
+      return vtt;
+    }
+
+    function downloadFile(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function showAlert(message, type = 'info') {
+      const alert = alertBox.querySelector('.alert');
+      alert.textContent = message;
+      alert.className = `alert alert-${type}`;
+      alertBox.style.display = 'block';
+      setTimeout(() => {
+        alertBox.style.display = 'none';
+      }, 5000);
+    }
+
+    // File upload handling
+    const fileForm = document.getElementById('fileTranscriptForm');
+    const fileInput = document.getElementById('fileInput');
+    const fileSubmitBtn = document.getElementById('fileSubmitBtn');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const uploadProgressBar = document.getElementById('uploadProgressBar');
+    const fileStatusDiv = document.getElementById('fileTranscriptStatus');
+    const advancedToggleFile = document.getElementById('advancedToggleFile');
+    const advancedPanelFile = document.getElementById('advancedPanelFile');
+    const maxSizeDisplay = document.getElementById('maxSizeDisplay');
+
+    // Verify file form elements exist
+    if (!fileForm || !fileInput || !fileSubmitBtn) {
+      console.error('File upload form elements not found in DOM');
+    }
+
+    // Load max upload size
+    async function loadMaxUploadSize() {
+      try {
+        const response = await fetch('/api/max-upload-size');
+        const data = await response.json();
+        if (maxSizeDisplay) {
+          maxSizeDisplay.textContent = `Max file size: ${data.max_size_mb} MB`;
+        }
+      } catch (err) {
+        if (maxSizeDisplay) {
+          maxSizeDisplay.textContent = 'Max file size: check server settings';
+        }
+      }
+    }
+    loadMaxUploadSize();
+
+    // Advanced options toggle for file upload
+    if (advancedToggleFile) {
+      advancedToggleFile.addEventListener('click', () => {
+        const isExpanded = advancedToggleFile.getAttribute('aria-expanded') === 'true';
+        if (advancedPanelFile) {
+          advancedPanelFile.hidden = isExpanded;
+        }
+        advancedToggleFile.setAttribute('aria-expanded', !isExpanded);
+      });
+    }
+
+    // File form submission
+    if (fileForm) {
+      fileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log('File form submitted');
+        
+        if (!fileInput || !fileInput.files.length) {
+          showAlert('Please select a file', 'warning');
+          return;
+        }
+
+        const file = fileInput.files[0];
+        const language = document.getElementById('languageInputFile')?.value.trim() || null;
+
+        if (fileSubmitBtn) {
+          fileSubmitBtn.disabled = true;
+          fileSubmitBtn.textContent = 'Uploading & Processing...';
+        }
+        if (fileStatusDiv) {
+          fileStatusDiv.textContent = 'Uploading file...';
+        }
+        if (uploadProgress) {
+          uploadProgress.style.display = 'block';
+        }
+        resultDiv.classList.add('d-none');
+
+        const formData = new FormData();
+        formData.append('file', file);
+        if (language) formData.append('language', language);
+        formData.append('format', 'json');
+
+        try {
+          const xhr = new XMLHttpRequest();
+          console.log('Starting upload of file:', file.name, 'Size:', file.size, 'bytes');
+
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable && uploadProgressBar) {
+              const percentComplete = (e.loaded / e.total) * 100;
+              console.log(`Upload progress: ${Math.round(percentComplete)}% (${e.loaded}/${e.total} bytes)`);
+              uploadProgressBar.style.width = percentComplete + '%';
+              if (fileStatusDiv) {
+                fileStatusDiv.textContent = `Uploading: ${Math.round(percentComplete)}%`;
+              }
+            }
+          });
+
+          xhr.upload.addEventListener('error', (e) => {
+            console.error('Upload error:', e);
+            showAlert('Upload failed. Check your connection.', 'danger');
+            if (uploadProgress) {
+              uploadProgress.style.display = 'none';
+            }
+          });
+
+          xhr.addEventListener('load', () => {
+            console.log('Upload completed, server response received');
+            if (uploadProgressBar) {
+              uploadProgressBar.style.width = '100%';
+            }
+            if (fileStatusDiv) {
+              fileStatusDiv.textContent = 'Processing...';
+            }
+
+            if (xhr.status === 200) {
+              currentTranscriptData = JSON.parse(xhr.responseText);
+              if (currentTranscriptData.success) {
+                displayResult();
+                showAlert('Transcript generated successfully!', 'success');
+              } else {
+                showAlert(`Error: ${currentTranscriptData.error}`, 'danger');
+              }
+            } else {
+              try {
+                const error = JSON.parse(xhr.responseText);
+                if (window.viddashHandleApiAuth?.(error)) {
+                  showAlert('Please sign up to continue.', 'warning');
+                } else {
+                  showAlert(`Error: ${error.error}`, 'danger');
+                }
+              } catch {
+                showAlert(`Upload failed (${xhr.status})`, 'danger');
+              }
+            }
+            if (uploadProgress) {
+              uploadProgress.style.display = 'none';
+            }
+          });
+
+          xhr.addEventListener('error', () => {
+            showAlert('Upload failed. Check your connection.', 'danger');
+            if (uploadProgress) {
+              uploadProgress.style.display = 'none';
+            }
+          });
+
+          xhr.open('POST', '/api/transcribe-file');
+          xhr.send(formData);
+        } catch (error) {
+          showAlert(`Error: ${error.message}`, 'danger');
+          if (uploadProgress) {
+            uploadProgress.style.display = 'none';
+          }
+        } finally {
+          if (fileSubmitBtn) {
+            fileSubmitBtn.disabled = false;
+            fileSubmitBtn.textContent = 'Generate Transcript';
+          }
+          if (fileStatusDiv) {
+            fileStatusDiv.textContent = '';
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

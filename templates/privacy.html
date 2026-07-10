@@ -1,49 +1,55 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Privacy Policy</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-</head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="/">Viddash</a>
-    </div>
-  </nav>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy - Viddash App</title>
+    <meta name="description" content="Viddash App privacy policy covering files, cookies, analytics, advertising, and user data." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+  </head>
+  <body>
+    {% include "partials/site-header.html" %}
+    <main class="page-main">
+      <section class="app-container page-hero-compact">
+        <h1>Privacy Policy</h1>
+        <p>Last updated: May 19, 2026</p>
+      </section>
 
-  <main class="container my-5">
-    <h1 class="h3 mb-3">Privacy Policy</h1>
-    <p class="text-muted">Last updated: <span id="updated"></span></p>
-
-    <p>We respect your privacy. This website displays advertising via Google AdSense and uses cookies for basic analytics and ad personalization. You can control cookies in your browser settings.</p>
-
-    <h2 class="h5 mt-4">Data We Do Not Store</h2>
-    <ul>
-      <li>We do not permanently store the video URLs you paste.</li>
-      <li>We do not store cookies you optionally provide, beyond using them for the current request.</li>
-    </ul>
-
-    <h2 class="h5 mt-4">Cookies</h2>
-    <p>We use cookies for analytics and personalized ads. By using this site, you consent to our use of cookies as described here.</p>
-
-    <h2 class="h5 mt-4">Third-Party Services</h2>
-    <p>We use Google AdSense to serve ads. See Google’s Privacy & Terms for details on how Google uses data from partner sites.</p>
-
-    <h2 class="h5 mt-4">Contact</h2>
-    <p>For privacy questions or requests, please contact us via the DMCA/Contact page.</p>
-  </main>
-
-  <footer class="py-4 border-top text-center text-muted small">
-    <div class="container">
-      &copy; <span id="year"></span> Viddash
-    </div>
-  </footer>
-
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-    document.getElementById('updated').textContent = new Date().toLocaleDateString();
-  </script>
-</body>
+      <section class="app-container content-grid">
+        <div>
+          <article class="content-card">
+            <h2>Overview</h2>
+            <p>Viddash App provides file conversion, compression, editing, downloading, and transcript tools. We design the product to process files only for the task you request and to avoid unnecessary long-term storage.</p>
+          </article>
+          <article class="content-card">
+            <h2>Information We Process</h2>
+            <ul>
+              <li>Files, URLs, output settings, and optional cookies you submit for a conversion or download request.</li>
+              <li>Basic technical data such as browser type, IP address, request time, and error logs needed for security and reliability.</li>
+              <li>Billing, account, and support details if you contact us or use a paid plan.</li>
+            </ul>
+          </article>
+          <article class="content-card">
+            <h2>Files and Cookies</h2>
+            <p>Uploaded files and optional platform cookies are used to complete the current request. Do not upload confidential files, credentials, or sensitive personal records unless you are comfortable processing them through the service.</p>
+            <p>We may use cookies for essential functionality, analytics, and advertising measurement. You can manage cookie preferences through your browser settings.</p>
+          </article>
+          <article class="content-card">
+            <h2>Third-Party Services</h2>
+            <p>We may use providers for hosting, analytics, payments, email, advertising, and media processing. These providers process data only as needed to operate the service.</p>
+          </article>
+        </div>
+        <aside class="content-sidebar">
+          <h2>Privacy Questions</h2>
+          <p>For privacy requests, data questions, or account support, contact the Viddash team.</p>
+          <a href="/contact">Contact us</a>
+        </aside>
+      </section>
+    </main>
+    {% include "partials/site-footer.html" %}
+  </body>
 </html>

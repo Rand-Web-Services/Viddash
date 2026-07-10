@@ -1,0 +1,93 @@
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: viddash-caddy
+    environment:
+      VIDDASH_DOMAIN: ${VIDDASH_DOMAIN:?set VIDDASH_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - viddash
+    restart: unless-stopped
+
+  viddash:
+    build: .
+    container_name: viddash-app
+    environment:
+      VIDDASH_ENV: production
+      VIDDASH_PUBLIC_URL: ${VIDDASH_PUBLIC_URL:-https://viddash.app}
+      VIDDASH_SECRET_KEY: ${VIDDASH_SECRET_KEY:?set VIDDASH_SECRET_KEY}
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+      RATELIMIT_STORAGE_URI: ${RATELIMIT_STORAGE_URI:?set RATELIMIT_STORAGE_URI}
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-100}
+      MAX_UPLOAD_HARD_LIMIT_MB: ${MAX_UPLOAD_HARD_LIMIT_MB:-512}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-noreply@viddash.app}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:-support@viddash.app}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      STRIPE_RESTRICTED_KEY: ${STRIPE_RESTRICTED_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_PRO_MONTHLY: ${STRIPE_PRICE_PRO_MONTHLY:-}
+      STRIPE_PRICE_PRO_YEARLY: ${STRIPE_PRICE_PRO_YEARLY:-}
+      STRIPE_PRICE_BUSINESS_MONTHLY: ${STRIPE_PRICE_BUSINESS_MONTHLY:-}
+      STRIPE_PRICE_BUSINESS_YEARLY: ${STRIPE_PRICE_BUSINESS_YEARLY:-}
+      PORT: "8000"
+      WEB_CONCURRENCY: "2"
+      GTHREADS: "2"
+      LOG_LEVEL: "info"
+      TIMEOUT: "300"
+      MERGE_TIMEOUT_SECONDS: ${MERGE_TIMEOUT_SECONDS:-105}
+      WATERMARK_TIMEOUT_SECONDS: ${WATERMARK_TIMEOUT_SECONDS:-105}
+      WATERMARK_JOB_TIMEOUT_SECONDS: ${WATERMARK_JOB_TIMEOUT_SECONDS:-1800}
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/robots.txt"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: viddash-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-viddash}
+      POSTGRES_USER: ${POSTGRES_USER:-viddash}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: viddash-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  redis_data:

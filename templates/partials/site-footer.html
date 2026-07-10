@@ -1,0 +1,45 @@
+<footer>
+  <div class="app-container footer-grid footer-rich">
+    <div>
+      <a class="brand" href="{{ localized_path('/') }}"><img src="/static/viddash-logo.png" alt="Viddash App" /></a>
+      <p>{{ t('Convert, compress, download, transcribe, resize, watermark, and edit your media instantly. Fast, private, and ready for real creator workflows.') }}</p>
+    </div>
+    <div>
+      <strong>Product</strong>
+      <a href="{{ localized_path('/tools') }}">{{ t('Tools') }}</a>
+      <a href="{{ localized_path('/video-compress') }}">{{ t('Compress') }}</a>
+      <a href="{{ localized_path('/video-converter') }}">{{ t('Convert') }}</a>
+      <a href="{{ localized_path('/transcript-generator') }}">{{ t('AI Tools') }}</a>
+    </div>
+    <div>
+      <strong>{{ t('Resources') }}</strong>
+      <a href="{{ localized_path('/resources') }}">Blog</a>
+      <a href="{{ localized_path('/guides') }}">Guides</a>
+      <a href="{{ localized_path('/help-center') }}">Help Center</a>
+      <a href="{{ localized_path('/faq') }}">{{ t('FAQ') }}</a>
+      <a href="{{ localized_path('/api-documentation') }}">API Documentation</a>
+    </div>
+    <div>
+      <strong>Company</strong>
+      <a href="{{ localized_path('/about') }}">About Us</a>
+      <a href="{{ localized_path('/contact') }}">Contact Us</a>
+      <a href="{{ localized_path('/pricing') }}">{{ t('Pricing') }}</a>
+      <a href="{{ localized_path('/youtube-downloader') }}">YouTube Downloader</a>
+    </div>
+    <div>
+      <strong>Legal</strong>
+      <a href="{{ localized_path('/privacy') }}">Privacy Policy</a>
+      <a href="{{ localized_path('/terms') }}">Terms of Service</a>
+      <a href="{{ localized_path('/dmca') }}">DMCA</a>
+      <a href="{{ localized_path('/facebook-downloader') }}">Facebook Downloader</a>
+      <a href="{{ localized_path('/tiktok-downloader') }}">TikTok Downloader</a>
+    </div>
+  </div>
+  <div class="app-container footer-bottom">&copy; <span id="year"></span> Viddash App. All rights reserved.</div>
+</footer>
+<script>
+  (function () {
+    var year = document.getElementById('year');
+    if (year) year.textContent = new Date().getFullYear();
+  })();
+</script>

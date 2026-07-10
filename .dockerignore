@@ -9,6 +9,12 @@ __pycache__/
 .git/
 .gitignore
 node_modules/
+ffmpeg/
+New folder/
+server.out.log
+server.err.log
+app.log
+viddash.db
 .DS_Store
 .idea/
 .vscode/

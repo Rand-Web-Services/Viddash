@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brand Watermark — Viddash</title>
+  <meta name="description" content="Add a logo or text watermark to your video. Bottom-left or bottom-right." />
+  <link rel="canonical" href="https://viddash.app/video-watermark" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+</head>
+<body>
+  {% include "partials/site-header.html" %}
+
+  <header class="py-5 bg-light">
+    <div class="container">
+      <h1 class="display-5 fw-bold mb-3">Brand Watermark</h1>
+      <p class="lead text-muted">Add a logo and/or text watermark. Choose bottom-left or bottom-right.</p>
+    </div>
+  </header>
+
+  <main class="container my-5">
+    <div class="row justify-content-center mb-5">
+      <div class="col-lg-10">
+        <div class="card shadow-sm p-3 p-md-4">
+          <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-pane" type="button" role="tab" aria-controls="file-pane" aria-selected="true">
+                Upload File
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-pane" type="button" role="tab" aria-controls="url-pane" aria-selected="false">
+                From URL
+              </button>
+            </li>
+          </ul>
+
+          <form id="wmForm" class="needs-validation">
+            <div class="tab-content">
+              <div class="tab-pane fade show active" id="file-pane" role="tabpanel" aria-labelledby="file-tab">
+                <div class="mb-3">
+                  <label for="fileInput" class="form-label fw-semibold">Upload video file</label>
+                  <div class="input-group">
+                    <input id="fileInput" type="file" class="form-control" accept="video/*" />
+                  </div>
+                  <div class="form-text">
+                    Adds watermark and exports MP4.
+                    <strong id="maxSizeDisplay"></strong>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="url-pane" role="tabpanel" aria-labelledby="url-tab">
+                <div class="mb-3">
+                  <label for="urlInput" class="form-label fw-semibold">Video URL</label>
+                  <input id="urlInput" type="url" class="form-control" placeholder="https://youtube.com/watch?v=..." />
+                </div>
+                <div class="mb-3">
+                  <label for="cookieInput" class="form-label fw-semibold">Cookies (optional, private videos)</label>
+                  <input id="cookieInput" type="text" class="form-control" placeholder="e.g., c_user=...; xs=...; datr=..." />
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-2">
+              <div class="col-md-6">
+                <label for="logoInput" class="form-label fw-semibold">Logo (optional)</label>
+                <input id="logoInput" type="file" class="form-control" accept="image/*" />
+              </div>
+              <div class="col-md-6">
+                <label for="textInput" class="form-label fw-semibold">Text watermark (optional)</label>
+                <input id="textInput" type="text" class="form-control" placeholder="Your Brand" />
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="positionSelect" class="form-label fw-semibold">Position</label>
+                <select id="positionSelect" class="form-select">
+                  <option value="bottom-left">Bottom-left</option>
+                  <option value="bottom-right" selected>Bottom-right</option>
+                </select>
+              </div>
+            </div>
+
+            <button id="submitBtn" class="btn btn-primary" type="submit">Apply Watermark</button>
+            <div class="form-text mt-2">Files are processed locally and deleted immediately after export.</div>
+            <div id="status" class="form-text mt-2"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="alertBox" class="container mb-3" style="display:none">
+      <div class="alert" role="alert"></div>
+    </div>
+  </main>
+
+  {% include "partials/site-footer.html" %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('wmForm');
+    const fileInput = document.getElementById('fileInput');
+    const urlInput = document.getElementById('urlInput');
+    const cookieInput = document.getElementById('cookieInput');
+    const logoInput = document.getElementById('logoInput');
+    const textInput = document.getElementById('textInput');
+    const positionSelect = document.getElementById('positionSelect');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusDiv = document.getElementById('status');
+    const alertBox = document.getElementById('alertBox');
+    const maxSizeDisplay = document.getElementById('maxSizeDisplay');
+
+    async function loadMaxUploadSize() {
+      try {
+        const response = await fetch('/api/max-upload-size');
+        const data = await response.json();
+        if (maxSizeDisplay) {
+          maxSizeDisplay.textContent = `Max file size: ${data.max_size_mb} MB`;
+        }
+      } catch (err) {
+        if (maxSizeDisplay) {
+          maxSizeDisplay.textContent = 'Max file size: check server settings';
+        }
+      }
+    }
+    loadMaxUploadSize();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hasFile = fileInput.files && fileInput.files.length;
+      const hasUrl = urlInput.value.trim().length > 0;
+      if (!hasFile && !hasUrl) {
+        showAlert('Please provide a file or URL', 'danger');
+        return;
+      }
+      const hasLogo = logoInput.files && logoInput.files.length;
+      const hasText = textInput.value.trim().length > 0;
+      if (!hasLogo && !hasText) {
+        showAlert('Add a logo or text watermark', 'danger');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Processing...';
+      statusDiv.textContent = 'Uploading and applying watermark. Keep this tab open; your browser will download the MP4 when it is ready.';
+
+      try {
+        const formData = new FormData();
+        if (hasFile) {
+          formData.append('file', fileInput.files[0]);
+        } else {
+          formData.append('url', urlInput.value.trim());
+          formData.append('cookies', cookieInput.value.trim() || '');
+        }
+        if (hasLogo) {
+          formData.append('logo', logoInput.files[0]);
+        }
+        if (hasText) {
+          formData.append('text', textInput.value.trim());
+        }
+        formData.append('position', positionSelect.value);
+
+        const response = await fetch('/api/video/watermark', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.status === 202) {
+          const job = await response.json();
+          statusDiv.textContent = 'Watermark job started. You can keep this page open while we process the video.';
+          await pollWatermarkJob(job.job_id);
+          return;
+        }
+
+        if (!response.ok) {
+          let message = `HTTP ${response.status}`;
+          try {
+            const err = await response.json();
+            if (window.viddashHandleApiAuth?.(err)) {
+              message = 'Please sign up to continue.';
+            } else {
+              message = err.error || message;
+            }
+          } catch (e) {}
+          throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        const filename = getFilenameFromDisposition(response.headers.get('Content-Disposition')) || 'watermarked.mp4';
+        downloadFile(blob, filename);
+        showAlert('Watermark ready! Download should start automatically.', 'success');
+      } catch (err) {
+        showAlert(`Error: ${err.message}. This attempt is saved in your account activity.`, 'danger');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Apply Watermark';
+        statusDiv.textContent = '';
+      }
+    });
+
+    async function pollWatermarkJob(jobId) {
+      if (!jobId) throw new Error('Missing job ID');
+      const started = Date.now();
+      const maxWaitMs = 30 * 60 * 1000;
+      while (Date.now() - started < maxWaitMs) {
+        await new Promise(resolve => setTimeout(resolve, 2500));
+        const response = await fetch(`/api/jobs/${encodeURIComponent(jobId)}`);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || `Job status failed (${response.status})`);
+        }
+        statusDiv.textContent = data.message || `Watermark status: ${data.status}`;
+        if (data.status === 'complete') {
+          showAlert('Watermark ready! Download should start automatically.', 'success');
+          window.location.href = data.download_url || `/api/jobs/${encodeURIComponent(jobId)}/download`;
+          return;
+        }
+        if (data.status === 'failed') {
+          throw new Error(data.error || data.message || 'Watermark failed');
+        }
+      }
+      throw new Error('Watermark is still processing. Check Recent Activity, then try again shortly.');
+    }
+
+    function getFilenameFromDisposition(header) {
+      if (!header) return null;
+      const match = /filename=\"?([^\";]+)\"?/i.exec(header);
+      return match ? match[1] : null;
+    }
+
+    function downloadFile(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function showAlert(message, type = 'info') {
+      const alert = alertBox.querySelector('.alert');
+      alert.textContent = message;
+      alert.className = `alert alert-${type}`;
+      alertBox.style.display = 'block';
+      setTimeout(() => {
+        alertBox.style.display = 'none';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

@@ -7,3 +7,10 @@ click==8.1.7
 requests==2.32.3
 Flask-Limiter==3.8.0
 gunicorn==22.0.0
+Pillow==10.4.0
+faster-whisper==1.2.1
+pysrt==1.1.2
+stripe==13.0.1
+psycopg[binary]==3.2.9
+chardet==5.2.0
+redis==6.4.0

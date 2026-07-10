@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin - Viddash App</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/styles.css?v=2.3" rel="stylesheet" />
+  </head>
+  <body>
+    {% include "partials/site-header.html" %}
+    <main class="page-main">
+      <section class="app-container page-hero-compact">
+        <span class="eyebrow">Admin</span>
+        <h1>Telemetry Dashboard</h1>
+        <p>Operational view of users, requests, slow jobs, errors, and account activity.</p>
+      </section>
+
+      <section class="app-container admin-metrics">
+        <div class="mini-card"><h3>Total users</h3><p>{{ dashboard.totals.users }}</p></div>
+        <div class="mini-card"><h3>Pro users</h3><p>{{ dashboard.totals.pro_users }}</p></div>
+        <div class="mini-card"><h3>Business users</h3><p>{{ dashboard.totals.business_users }}</p></div>
+        <div class="mini-card"><h3>Requests</h3><p>{{ dashboard.totals.requests }}</p></div>
+        <div class="mini-card"><h3>Request errors</h3><p>{{ dashboard.totals.errors }}</p></div>
+        <div class="mini-card"><h3>Activity events</h3><p>{{ dashboard.totals.activity }}</p></div>
+      </section>
+
+      <section class="app-container admin-grid">
+        <article class="content-card">
+          <h2>Recent Errors</h2>
+          {% include "partials/admin-request-table.html" with context %}
+        </article>
+
+        <article class="content-card">
+          <h2>Slowest Requests</h2>
+          {% set rows = dashboard.slow_requests %}
+          {% include "partials/admin-request-table.html" %}
+        </article>
+
+        <article class="content-card">
+          <h2>Recent Activity</h2>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Status</th><th>Summary</th></tr></thead>
+              <tbody>
+                {% for item in dashboard.recent_activity %}
+                  <tr>
+                    <td>{{ item.created_at.replace('T', ' ') }}</td>
+                    <td>{{ item.email or '-' }}</td>
+                    <td>{{ item.action }}</td>
+                    <td><span class="activity-badge {{ item.status }}">{{ item.status|title }}</span></td>
+                    <td>{{ item.summary }}</td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="5">No activity yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="content-card">
+          <h2>Top Paths</h2>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Path</th><th>Count</th><th>Max ms</th></tr></thead>
+              <tbody>
+                {% for item in dashboard.top_paths %}
+                  <tr><td>{{ item.path }}</td><td>{{ item.count }}</td><td>{{ item.max_duration_ms }}</td></tr>
+                {% else %}
+                  <tr><td colspan="3">No telemetry yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="content-card admin-wide">
+          <h2>Recent Requests</h2>
+          {% set rows = dashboard.recent_requests %}
+          {% include "partials/admin-request-table.html" %}
+        </article>
+
+        <article class="content-card admin-wide">
+          <h2>Recent Users</h2>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Created</th><th>Email</th><th>Name</th><th>Provider</th><th>Plan</th><th>Subscription</th></tr></thead>
+              <tbody>
+                {% for user in dashboard.users %}
+                  <tr>
+                    <td>{{ user.created_at.replace('T', ' ') }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.provider }}</td>
+                    <td>{{ user.plan }}</td>
+                    <td>{{ user.subscription_status or 'free' }}</td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="6">No users yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+    {% include "partials/site-footer.html" %}
+  </body>
+</html>

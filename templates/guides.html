@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guides - Viddash App</title>
+    <meta name="description" content="Practical guides for converting, compressing, resizing, downloading, and preparing media files with Viddash App." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+  </head>
+  <body>
+    {% include "partials/site-header.html" %}
+    <main class="page-main">
+      <section class="app-container page-hero-compact">
+        <h1>Guides</h1>
+        <p>Step-by-step workflows for getting cleaner, smaller, and more compatible files from Viddash.</p>
+      </section>
+
+      <section class="app-container mini-card-grid">
+        <a class="mini-card" href="/video-converter"><i data-lucide="file-video"></i><h2>Convert Videos</h2><p>Choose MP4, WebM, MOV, AVI, MKV, or GIF based on where the file will be used.</p></a>
+        <a class="mini-card" href="/video-compress"><i data-lucide="minimize-2"></i><h2>Compress for Web</h2><p>Reduce file size while keeping enough quality for previews, ads, and landing pages.</p></a>
+        <a class="mini-card" href="/video-resizer"><i data-lucide="crop"></i><h2>Resize for Social</h2><p>Export 9:16, 4:5, 1:1, and 16:9 versions for common platform placements.</p></a>
+        <a class="mini-card" href="/?target=image"><i data-lucide="image"></i><h2>Convert Images</h2><p>Turn PNGs into WebP and resize assets for faster pages and better sharing.</p></a>
+        <a class="mini-card" href="/transcript-generator"><i data-lucide="captions"></i><h2>Create Captions</h2><p>Generate transcripts and caption files for editing, publishing, and accessibility.</p></a>
+        <a class="mini-card" href="/utm-builder"><i data-lucide="link"></i><h2>Track Campaigns</h2><p>Build clean UTM links for ads, newsletters, launches, and client reporting.</p></a>
+      </section>
+    </main>
+    {% include "partials/site-footer.html" %}
+    <script>if (window.lucide) window.lucide.createIcons();</script>
+  </body>
+</html>

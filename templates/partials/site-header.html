@@ -1,0 +1,197 @@
+<nav class="topbar">
+  <div class="app-container topbar-inner">
+    <a class="brand" href="{{ localized_path('/') }}" aria-label="Viddash App home">
+      <img src="/static/viddash-logo.png" alt="Viddash App" />
+    </a>
+    <button class="mobile-menu" type="button" aria-label="Open menu">
+      <i data-lucide="menu"></i>
+    </button>
+    <div class="nav-links">
+      <a href="{{ localized_path('/tools') }}">{{ t('Tools') }}</a>
+      <a href="{{ localized_path('/video-compress') }}">{{ t('Compress') }}</a>
+      <a href="{{ localized_path('/video-converter') }}">{{ t('Convert') }}</a>
+      <a href="{{ localized_path('/transcript-generator') }}">{{ t('AI Tools') }} <span>New</span></a>
+      <a href="{{ localized_path('/') }}">{{ t('Video Downloader') }}</a>
+      <a href="{{ localized_path('/video-to-audio') }}">{{ t('Video to Audio') }}</a>
+      <a href="{{ localized_path('/video-resizer') }}">{{ t('Video Resizer') }}</a>
+      <a href="{{ localized_path('/video-export') }}">{{ t('Export') }}</a>
+      <a href="{{ localized_path('/video-watermark') }}">{{ t('Watermark') }}</a>
+      <a href="{{ localized_path('/utm-builder') }}">UTM</a>
+      <a href="{{ localized_path('/video-clipper') }}">{{ t('Clipper') }}</a>
+      <a href="{{ localized_path('/video-thumbnails') }}">{{ t('Thumbnails') }}</a>
+      <a href="{{ localized_path('/?target=image') }}">{{ t('Image Resizer') }}</a>
+      <a href="{{ localized_path('/pricing') }}">{{ t('Pricing') }}</a>
+      <a href="{{ localized_path('/resources') }}">{{ t('Resources') }}</a>
+      <a href="{{ localized_path('/faq') }}">{{ t('FAQ') }}</a>
+    </div>
+    <div class="nav-actions">
+      <label class="language-select">
+        <span class="visually-hidden">Language</span>
+        <select aria-label="Language" onchange="if (this.value) window.location.href = this.value">
+          {% for code, meta in supported_locales.items() %}
+            <option value="{{ locale_switch_path(code) }}" {% if current_locale == code %}selected{% endif %}>{{ meta.native }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="icon-btn theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false" title="Toggle dark mode">
+        <i data-lucide="moon"></i>
+      </button>
+      {% if current_user %}
+        <a class="btn btn-light btn-login" href="/account">{{ t('Account') }}</a>
+      {% else %}
+        <a class="btn btn-light btn-login" href="{{ localized_path('/login') }}">{{ t('Log in') }}</a>
+        <a class="btn btn-primary btn-signup" href="{{ localized_path('/signup') }}">{{ t('Sign up Free') }}</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+<div class="auth-prompt" id="loginRequiredPrompt" hidden role="dialog" aria-modal="true" aria-labelledby="loginRequiredTitle">
+  <div class="auth-prompt-backdrop" data-auth-prompt-close></div>
+  <div class="auth-prompt-card">
+    <button class="auth-prompt-close" type="button" aria-label="Close signup prompt" data-auth-prompt-close>&times;</button>
+    <p class="eyebrow">{{ t('Account required') }}</p>
+    <h2 id="loginRequiredTitle">{{ t('Create a free Viddash account to continue') }}</h2>
+    <p>{{ t('Sign up to use this tool, save your account access, and unlock paid media processing when you need it.') }}</p>
+    <div class="auth-prompt-actions">
+      <a class="btn btn-primary" href="{{ localized_path('/signup') }}">{{ t('Sign up Free') }}</a>
+      <a class="btn btn-light" href="{{ localized_path('/login') }}">{{ t('Log in') }}</a>
+    </div>
+  </div>
+</div>
+<div class="auth-prompt" id="upgradeRequiredPrompt" hidden role="dialog" aria-modal="true" aria-labelledby="upgradeRequiredTitle">
+  <div class="auth-prompt-backdrop" data-upgrade-prompt-close></div>
+  <div class="auth-prompt-card">
+    <button class="auth-prompt-close" type="button" aria-label="Close upgrade prompt" data-upgrade-prompt-close>&times;</button>
+    <p class="eyebrow">Pro feature</p>
+    <h2 id="upgradeRequiredTitle">Upgrade to download merged MP4 files</h2>
+    <p>Some platforms split video and audio. Viddash can merge them into one MP4 on Pro. If a direct A+V option is available, you can still use that on your current plan.</p>
+    <div class="auth-prompt-actions">
+      <a class="btn btn-primary" href="{{ localized_path('/pricing') }}">View Pro Plans</a>
+      <button class="btn btn-light" type="button" data-upgrade-prompt-close>Keep Browsing</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+{% if request.endpoint != 'admin_dashboard' %}
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RWGK1VG43X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-RWGK1VG43X');
+</script>
+<script>
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "xk9vxmsbed");
+</script>
+{% endif %}
+<script>
+  window.viddashAuthState = {
+    authenticated: {{ 'true' if current_user else 'false' }},
+    plan: {{ (current_user['plan'] if current_user else 'free') | tojson }},
+    signupUrl: {{ localized_path('/signup') | tojson }},
+    loginUrl: {{ localized_path('/login') | tojson }},
+    pricingUrl: {{ localized_path('/pricing') | tojson }}
+  };
+  window.addEventListener('DOMContentLoaded', function () {
+    if (window.__viddashHeaderReady) return;
+    window.__viddashHeaderReady = true;
+    const savedTheme = localStorage.getItem('viddash-theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldUseDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+    document.body.classList.toggle('dark-mode', shouldUseDark);
+    const syncThemeButtons = function () {
+      const isDark = document.body.classList.contains('dark-mode');
+      document.querySelectorAll('.theme-toggle').forEach(function (button) {
+        button.setAttribute('aria-pressed', String(isDark));
+        button.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      });
+    };
+    if (window.lucide) window.lucide.createIcons();
+    document.querySelectorAll('.mobile-menu').forEach(function (button) {
+      button.addEventListener('click', function () {
+        button.closest('.topbar')?.classList.toggle('is-open');
+      });
+    });
+    document.querySelectorAll('.theme-toggle').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const isDark = document.body.classList.toggle('dark-mode');
+        localStorage.setItem('viddash-theme', isDark ? 'dark' : 'light');
+        syncThemeButtons();
+      });
+    });
+    syncThemeButtons();
+  });
+  window.viddashShowLoginPrompt = function () {
+    try {
+      const url = document.getElementById('urlInput')?.value?.trim();
+      if (url) localStorage.setItem('viddash-pending-video-url', url);
+    } catch (err) {}
+    const next = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+    document.querySelectorAll('#loginRequiredPrompt a[href]').forEach(function (link) {
+      const href = link.getAttribute('href') || '';
+      if (href.includes('/signup') || href.includes('/login')) {
+        link.setAttribute('href', href.split('?')[0] + '?next=' + next);
+      }
+    });
+    const prompt = document.getElementById('loginRequiredPrompt');
+    if (!prompt) {
+      window.location.href = '{{ localized_path('/signup') }}';
+      return;
+    }
+    prompt.hidden = false;
+    document.body.classList.add('auth-prompt-open');
+    prompt.querySelector('.btn-primary')?.focus();
+  };
+  window.viddashShowUpgradePrompt = function () {
+    const prompt = document.getElementById('upgradeRequiredPrompt');
+    if (!prompt) {
+      window.location.href = window.viddashAuthState?.pricingUrl || '/pricing';
+      return;
+    }
+    prompt.hidden = false;
+    document.body.classList.add('auth-prompt-open');
+    prompt.querySelector('.btn-primary')?.focus();
+  };
+  window.viddashHandleApiAuth = function (payload) {
+    if (payload && payload.error === 'login_required') {
+      window.viddashShowLoginPrompt();
+      return true;
+    }
+    if (payload && payload.error === 'upgrade_required') {
+      window.viddashShowUpgradePrompt();
+      return true;
+    }
+    return false;
+  };
+  window.addEventListener('DOMContentLoaded', function () {
+    const prompt = document.getElementById('loginRequiredPrompt');
+    if (!prompt) return;
+    prompt.querySelectorAll('[data-auth-prompt-close]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        prompt.hidden = true;
+        document.body.classList.remove('auth-prompt-open');
+      });
+    });
+    const upgradePrompt = document.getElementById('upgradeRequiredPrompt');
+    upgradePrompt?.querySelectorAll('[data-upgrade-prompt-close]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        upgradePrompt.hidden = true;
+        document.body.classList.remove('auth-prompt-open');
+      });
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !prompt.hidden) {
+        prompt.hidden = true;
+        document.body.classList.remove('auth-prompt-open');
+      }
+      if (event.key === 'Escape' && upgradePrompt && !upgradePrompt.hidden) {
+        upgradePrompt.hidden = true;
+        document.body.classList.remove('auth-prompt-open');
+      }
+    });
+  });
+</script>

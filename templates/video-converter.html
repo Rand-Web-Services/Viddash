@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Video Converter - Viddash App</title>
+    <meta name="description" content="Upload a video and convert it to MP4, MOV, AVI, MKV, WebM, or GIF with Viddash App." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  </head>
+  <body>
+    {% include "partials/site-header.html" %}
+    <main class="page-main">
+      <section class="app-container tool-page-head">
+        <div>
+          <nav class="breadcrumbs"><a href="/">Home</a><span>/</span><a href="/tools">Convert</a><span>/</span>Video Converter</nav>
+          <h1>Video Converter</h1>
+          <p>Convert your videos to any format you need.</p>
+        </div>
+      </section>
+      <section class="app-container video-converter-layout">
+        <form id="videoConvertForm" class="tool-workspace">
+          <label class="dropzone video-upload-zone">
+            <i data-lucide="cloud-upload"></i>
+            <strong>Drop your video here</strong>
+            <span>or click to browse. Max file size follows your server upload limit.</span>
+            <input id="videoConvertFile" type="file" accept="video/*" required />
+          </label>
+          <div class="compact-grid">
+            <label><span>Convert to</span><select id="videoOutputFormat" class="form-select"><option value="mp4">MP4 (Best Quality)</option><option value="mov">MOV</option><option value="avi">AVI</option><option value="mkv">MKV</option><option value="webm">WEBM</option><option value="gif">GIF</option></select></label>
+            <label><span>Quality</span><select id="videoQuality" class="form-select"><option value="high">High Quality</option><option value="balanced" selected>Balanced</option><option value="small">Small File</option></select></label>
+          </div>
+          <div class="compact-grid">
+            <label><span>Resolution</span><select id="videoResolution" class="form-select"><option value="original">Original</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option></select></label>
+            <label><span>Frame Rate</span><select id="videoFps" class="form-select"><option value="original">Original</option><option value="30">30 fps</option><option value="24">24 fps</option><option value="15">15 fps</option></select></label>
+          </div>
+          <label class="switch-row"><input id="removeAudio" type="checkbox" /> <span>Remove Audio</span></label>
+          <button id="videoConvertSubmit" class="btn btn-primary w-100" type="submit">Convert Now <i data-lucide="arrow-right"></i></button>
+          <div id="videoConvertProgress" class="progress-card" hidden>
+            <div class="progress-card-head"><strong id="videoConvertLabel">Preparing video...</strong><span id="videoConvertPercent">0%</span></div>
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="videoConvertBar"></div></div>
+            <div id="videoConvertDetail" class="progress-detail">Upload starts when you click Convert Now.</div>
+          </div>
+          <div id="videoConvertStatus" class="form-text"></div>
+        </form>
+        <aside class="format-panel">
+          <h2>Output Format</h2>
+          <button class="format-option active" type="button" data-format="mp4"><i data-lucide="file-video"></i><span><strong>MP4</strong>Most compatible format</span><i data-lucide="check-circle"></i></button>
+          <button class="format-option" type="button" data-format="mov"><i data-lucide="film"></i><span><strong>MOV</strong>High quality video</span></button>
+          <button class="format-option" type="button" data-format="avi"><i data-lucide="file"></i><span><strong>AVI</strong>Widely used format</span></button>
+          <button class="format-option" type="button" data-format="mkv"><i data-lucide="box"></i><span><strong>MKV</strong>High quality container</span></button>
+          <button class="format-option" type="button" data-format="webm"><i data-lucide="globe"></i><span><strong>WEBM</strong>Web optimized</span></button>
+          <button class="format-option" type="button" data-format="gif"><i data-lucide="image"></i><span><strong>GIF</strong>Short animation</span></button>
+          <div class="why-panel"><h3>Why Convert with Viddash App?</h3><ul><li>Fast and reliable conversion</li><li>High-quality output</li><li>Supports popular formats</li><li>100% free to use</li><li>No sign-up required</li></ul></div>
+        </aside>
+      </section>
+    </main>
+    {% include "partials/site-footer.html" %}
+    <script src="/static/pages.js?v=2.1"></script>
+  </body>
+</html>

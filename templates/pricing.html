@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="{{ current_locale }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pricing - Viddash App</title>
+    <meta name="description" content="Simple and transparent Viddash pricing for file conversion and media optimization." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  </head>
+  <body>
+    {% include "partials/site-header.html" %}
+    <main class="page-main">
+      <section class="app-container page-hero-compact text-center">
+        <h1>{{ t('Simple & Transparent Pricing') }}</h1>
+        <p>{{ t('Clear usage limits that keep conversion fast, reliable, and sustainable.') }}</p>
+        {% include "partials/auth-messages.html" %}
+        <div class="billing-toggle" role="group" aria-label="Billing period">
+          <button class="active" type="button" data-billing="monthly" aria-pressed="true">Monthly</button>
+          <button type="button" data-billing="yearly" aria-pressed="false">Yearly <span>Save 20%</span></button>
+        </div>
+      </section>
+      <section class="app-container pricing-grid">
+        <article class="price-card">
+          <h2>Free</h2>
+          <div class="price" data-plan="free">$0<span>/forever</span></div>
+          <p>For light, occasional use and trying the core tools.</p>
+          <a class="btn btn-outline-secondary w-100" href="{{ '/account' if current_user else localized_path('/signup') }}">Get Started Free</a>
+          <ul><li>25 image conversions/day</li><li>30 video minutes/month</li><li>Max file size: 100MB</li><li>Standard queue speed</li><li>Core tools access</li><li>No sign up required</li></ul>
+        </article>
+        <article class="price-card featured">
+          <h2>Pro</h2>
+          <div class="price" data-plan="pro" data-monthly="15" data-yearly="144" data-yearly-monthly="12">$15<span>/month</span></div>
+          <p>For creators and solo operators who convert files every week.</p>
+          <form class="checkout-form" method="post" action="/billing/checkout">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="plan" value="pro" />
+            <input type="hidden" name="billing" value="monthly" data-billing-input />
+            <button class="btn btn-primary w-100" type="submit">Get Pro</button>
+          </form>
+          <ul><li>1,000 image conversions/month</li><li>300 video minutes/month</li><li>Max file size: 1GB</li><li>Priority queue speed</li><li>All tools access</li><li>No ads</li><li>Email support</li></ul>
+        </article>
+        <article class="price-card">
+          <h2>Business</h2>
+          <div class="price" data-plan="business" data-monthly="59" data-yearly="564" data-yearly-monthly="47">$59<span>/month</span></div>
+          <p>For teams with batch work, larger files, and API needs.</p>
+          <form class="checkout-form" method="post" action="/billing/checkout">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="plan" value="business" />
+            <input type="hidden" name="billing" value="monthly" data-billing-input />
+            <button class="btn btn-outline-secondary w-100" type="submit">Get Business</button>
+          </form>
+          <ul><li>10,000 image conversions/month</li><li>2,000 video minutes/month</li><li>Max file size: 5GB</li><li>Fastest queue speed</li><li>5 team seats included</li><li>API access: 10,000 calls/month</li><li>Priority support</li></ul>
+        </article>
+      </section>
+      <section class="app-container pricing-note">
+        <strong>Usage beyond plan limits</strong>
+        <span>Additional capacity can be purchased as overages: image batches, video processing minutes, storage-heavy exports, or API calls. This keeps heavy users profitable without limiting lighter users.</span>
+      </section>
+    </main>
+    {% include "partials/site-footer.html" %}
+    <script src="/static/pages.js?v=2.1"></script>
+  </body>
+</html>

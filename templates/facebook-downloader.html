@@ -1,51 +1,47 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Facebook Video Downloader (MP4 with sound)</title>
-  <meta name="description" content="Free Facebook video downloader. Get MP4 with audio, support for Reels and private videos using cookies.">
-  <link rel="canonical" href="https://viddash.app/facebook-downloader" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-</head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="/">Viddash</a>
-    </div>
-  </nav>
-
-  <main class="container my-5">
-    <header class="mb-4">
-      <h1 class="h3">Facebook Video Downloader</h1>
-      <p class="text-muted">Download Facebook videos and Reels in MP4 with sound. For private videos, paste your cookies.</p>
-    </header>
-
-    <section class="mb-4">
-      <h2 class="h5">How to use</h2>
-      <ol>
-        <li>Copy the Facebook video or Reel URL.</li>
-        <li>Paste it on the <a href="/">homepage</a> and click Download.</li>
-        <li>If you only see video‑only formats, use the blue "Download" to merge audio+video.</li>
-        <li>For private videos, paste your Facebook cookies in the optional field.</li>
-      </ol>
-      <div class="alert alert-info small">Tip: Prefer progressive formats (A+V) for fastest downloads.</div>
-    </section>
-
-    <section class="mb-4">
-      <h2 class="h5">FAQ</h2>
-      <p class="mb-1"><strong>Audio missing?</strong> Some formats are video‑only. Use the blue server Download (merges A/V).</p>
-      <p class="mb-1"><strong>Private videos?</strong> Provide your own cookies; we don’t store them.</p>
-    </section>
-
-    <section>
-      <a href="/" class="btn btn-primary">Open Downloader</a>
-    </section>
-  </main>
-
-  <footer class="py-4 border-top text-center text-muted small">
-    <div class="container">&copy; <span id="year"></span> Viddash</div>
-  </footer>
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Facebook Video Downloader - Viddash App</title>
+    <meta name="description" content="Download Facebook videos and Reels as MP4 with sound using Viddash App." />
+    <link rel="canonical" href="https://viddash.app/facebook-downloader" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+  </head>
+  <body>
+    {% include "partials/site-header.html" %}
+    <main class="page-main">
+      <section class="app-container page-hero-compact">
+        <span class="eyebrow">Video downloader</span>
+        <h1>Facebook Video Downloader</h1>
+        <p>Download Facebook videos and Reels in practical MP4 formats. Private or restricted links may require your own browser cookies.</p>
+      </section>
+      <section class="app-container content-grid">
+        <div>
+          <article class="content-card">
+            <h2>How It Works</h2>
+            <ol>
+              <li>Copy the Facebook video or Reel URL.</li>
+              <li>Paste it into the Viddash downloader.</li>
+              <li>Choose a direct audio-and-video format or merge streams on the server.</li>
+            </ol>
+          </article>
+          <article class="content-card">
+            <h2>Private Videos</h2>
+            <p>If a video is private, paste your own cookies in the optional field. Viddash uses them for the current request and does not need to store them permanently.</p>
+          </article>
+        </div>
+        <aside class="content-sidebar">
+          <h2>Open Tool</h2>
+          <p>Use the shared downloader to inspect available Facebook formats.</p>
+          <a class="btn btn-primary w-100" href="/">Open Downloader</a>
+        </aside>
+      </section>
+    </main>
+    {% include "partials/site-footer.html" %}
+  </body>
 </html>

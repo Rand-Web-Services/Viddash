@@ -1,0 +1,9 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$VIDDASH_DOMAIN}, www.{$VIDDASH_DOMAIN} {
+	tls internal
+	encode zstd gzip
+	reverse_proxy viddash:8000
+}

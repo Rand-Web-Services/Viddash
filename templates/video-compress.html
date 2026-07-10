@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Batch Video Compression — Viddash</title>
+  <meta name="description" content="Compress video to multiple target sizes in one ZIP. Choose presets or enter custom targets." />
+  <link rel="canonical" href="https://viddash.app/video-compress" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/static/styles.css" rel="stylesheet" />
+</head>
+<body>
+  {% include "partials/site-header.html" %}
+
+  <header class="py-5 bg-light">
+    <div class="container">
+      <h1 class="display-5 fw-bold mb-3">Batch Video Compression</h1>
+      <p class="lead text-muted">Choose preset sizes or enter custom targets. Get all compressed versions in one ZIP.</p>
+    </div>
+  </header>
+
+  <main class="container my-5">
+    <div class="row justify-content-center mb-5">
+      <div class="col-lg-10">
+        <div class="card shadow-sm p-3 p-md-4">
+          <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-pane" type="button" role="tab" aria-controls="file-pane" aria-selected="true">
+                Upload File
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-pane" type="button" role="tab" aria-controls="url-pane" aria-selected="false">
+                From URL
+              </button>
+            </li>
+          </ul>
+
+          <form id="compressForm" class="needs-validation">
+            <div class="tab-content">
+              <div class="tab-pane fade show active" id="file-pane" role="tabpanel" aria-labelledby="file-tab">
+                <div class="mb-3">
+                  <label for="fileInput" class="form-label fw-semibold">Upload video file</label>
+                  <div class="input-group">
+                    <input id="fileInput" type="file" class="form-control" accept="video/*" />
+                  </div>
+                  <div class="form-text">
+                    Exports a ZIP with each target size.
+                    <strong id="maxSizeDisplay"></strong>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="url-pane" role="tabpanel" aria-labelledby="url-tab">
+                <div class="mb-3">
+                  <label for="urlInput" class="form-label fw-semibold">Video URL</label>
+                  <input id="urlInput" type="url" class="form-control" placeholder="https://youtube.com/watch?v=..." />
+                  <div class="form-text">Supports YouTube, TikTok, Facebook, Instagram, X/Twitter, and more.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="cookieInput" class="form-label fw-semibold">Cookies (optional, private videos)</label>
+                  <input id="cookieInput" type="text" class="form-control" placeholder="e.g., c_user=...; xs=...; datr=..." />
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-2">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Preset sizes</label>
+                <div class="form-check">
+                  <input class="form-check-input target-check" type="checkbox" value="8" id="t8" />
+                  <label class="form-check-label" for="t8">8 MB (email)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input target-check" type="checkbox" value="15" id="t15" checked />
+                  <label class="form-check-label" for="t15">15 MB (ads)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input target-check" type="checkbox" value="25" id="t25" checked />
+                  <label class="form-check-label" for="t25">25 MB (web)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input target-check" type="checkbox" value="50" id="t50" />
+                  <label class="form-check-label" for="t50">50 MB</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input target-check" type="checkbox" value="100" id="t100" />
+                  <label class="form-check-label" for="t100">100 MB</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="customTargets" class="form-label fw-semibold">Custom sizes (MB)</label>
+                <input id="customTargets" type="text" class="form-control" placeholder="e.g., 12, 30, 75" />
+                <div class="form-text">Comma-separated. We’ll combine with selected presets.</div>
+
+                <label for="codecSelect" class="form-label fw-semibold mt-3">Codec</label>
+                <select id="codecSelect" class="form-select">
+                  <option value="h264" selected>H.264 (most compatible)</option>
+                  <option value="h265">H.265 (smaller, less compatible)</option>
+                </select>
+
+                <label for="audioSelect" class="form-label fw-semibold mt-3">Audio bitrate</label>
+                <select id="audioSelect" class="form-select">
+                  <option value="96">96 kbps</option>
+                  <option value="128" selected>128 kbps</option>
+                  <option value="192">192 kbps</option>
+                </select>
+              </div>
+            </div>
+
+            <button id="submitBtn" class="btn btn-primary" type="submit">Compress ZIP</button>
+            <div class="form-text mt-2">Files are processed locally and deleted immediately after export.</div>
+            <div id="status" class="form-text mt-2"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="alertBox" class="container mb-3" style="display:none">
+      <div class="alert" role="alert"></div>
+    </div>
+  </main>
+
+  {% include "partials/site-footer.html" %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('compressForm');
+    const fileInput = document.getElementById('fileInput');
+    const urlInput = document.getElementById('urlInput');
+    const cookieInput = document.getElementById('cookieInput');
+    const customTargets = document.getElementById('customTargets');
+    const codecSelect = document.getElementById('codecSelect');
+    const audioSelect = document.getElementById('audioSelect');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusDiv = document.getElementById('status');
+    const alertBox = document.getElementById('alertBox');
+    const maxSizeDisplay = document.getElementById('maxSizeDisplay');
+
+    async function loadMaxUploadSize() {
+      try {
+        const response = await fetch('/api/max-upload-size');
+        const data = await response.json();
+        if (maxSizeDisplay) {
+          maxSizeDisplay.textContent = `Max file size: ${data.max_size_mb} MB`;
+        }
+      } catch (err) {
+        if (maxSizeDisplay) {
+          maxSizeDisplay.textContent = 'Max file size: check server settings';
+        }
+      }
+    }
+    loadMaxUploadSize();
+
+    function parseCustomTargets(input) {
+      if (!input) return [];
+      return input.split(',')
+        .map(v => v.trim())
+        .filter(Boolean)
+        .map(v => parseFloat(v))
+        .filter(v => !Number.isNaN(v));
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hasFile = fileInput.files && fileInput.files.length;
+      const hasUrl = urlInput.value.trim().length > 0;
+      if (!hasFile && !hasUrl) {
+        showAlert('Please provide a file or URL', 'danger');
+        return;
+      }
+
+      const presets = Array.from(document.querySelectorAll('.target-check:checked')).map(el => parseFloat(el.value));
+      const custom = parseCustomTargets(customTargets.value);
+      const targets = Array.from(new Set([...presets, ...custom]));
+      if (!targets.length) {
+        showAlert('Select at least one target size', 'danger');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Compressing...';
+      statusDiv.textContent = 'Uploading and compressing video...';
+
+      try {
+        const formData = new FormData();
+        if (hasFile) {
+          formData.append('file', fileInput.files[0]);
+        } else {
+          formData.append('url', urlInput.value.trim());
+          formData.append('cookies', cookieInput.value.trim() || '');
+        }
+        formData.append('targets', JSON.stringify(targets));
+        formData.append('codec', codecSelect.value);
+        formData.append('audio', audioSelect.value);
+
+        const response = await fetch('/api/video/compress-batch', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          let message = `HTTP ${response.status}`;
+          try {
+            const err = await response.json();
+            if (window.viddashHandleApiAuth?.(err)) {
+              message = 'Please sign up to continue.';
+            } else {
+              message = err.error || message;
+            }
+          } catch (e) {}
+          throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        const filename = getFilenameFromDisposition(response.headers.get('Content-Disposition')) || 'compressed.zip';
+        downloadFile(blob, filename);
+        showAlert('Compressed files ready! Download should start automatically.', 'success');
+      } catch (err) {
+        showAlert(`Error: ${err.message}`, 'danger');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Compress ZIP';
+        statusDiv.textContent = '';
+      }
+    });
+
+    function getFilenameFromDisposition(header) {
+      if (!header) return null;
+      const match = /filename=\"?([^\";]+)\"?/i.exec(header);
+      return match ? match[1] : null;
+    }
+
+    function downloadFile(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function showAlert(message, type = 'info') {
+      const alert = alertBox.querySelector('.alert');
+      alert.textContent = message;
+      alert.className = `alert alert-${type}`;
+      alertBox.style.display = 'block';
+      setTimeout(() => {
+        alertBox.style.display = 'none';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

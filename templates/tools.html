@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="{{ current_locale }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>All Tools - Viddash App</title>
+    <meta name="description" content="Browse every Viddash conversion, compression, editing, video, audio, image, and web tool." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  </head>
+  <body>
+    {% include "partials/site-header.html" %}
+    <main class="page-main">
+      <section class="app-container page-hero-compact">
+        <h1>{{ t('All Tools') }}</h1>
+        <p>{{ t('Everything you need to convert, compress, edit, and optimize files. Fast, free, and easy to use.') }}</p>
+        <div class="tool-search-row">
+          <label class="tool-search"><i data-lucide="search"></i><input id="toolSearch" type="search" placeholder="Search tools..." /></label>
+          <div class="filter-pills">
+            <button class="active" type="button" data-filter="all">All</button>
+            <button type="button" data-filter="convert">Convert</button>
+            <button type="button" data-filter="compress">Compress</button>
+            <button type="button" data-filter="edit">Edit</button>
+          </div>
+        </div>
+      </section>
+      <section class="app-container tools-catalog">
+        <h2>Convert</h2>
+        <div class="tool-grid catalog-grid">
+          <a class="tool-card blue" data-category="convert" href="/video-converter"><i data-lucide="file-video"></i><strong>Video Converter</strong><span>Convert videos to MP4, MOV, AVI, MKV, WebM, or GIF.</span></a>
+          <a class="tool-card orange" data-category="convert" href="/video-to-audio"><i data-lucide="music"></i><strong>Audio Converter</strong><span>Convert or extract MP3, M4A, WAV, and FLAC.</span></a>
+          <a class="tool-card teal" data-category="convert" href="/?target=image"><i data-lucide="image"></i><strong>Image Converter</strong><span>Convert images to JPG, PNG, WebP and more.</span></a>
+          <a class="tool-card red" data-category="convert" href="/transcript-generator"><i data-lucide="file-text"></i><strong>Document Converter</strong><span>Create captions and transcript exports.</span></a>
+        </div>
+        <h2>Compress</h2>
+        <div class="tool-grid catalog-grid">
+          <a class="tool-card blue" data-category="compress" href="/video-compress"><i data-lucide="minimize-2"></i><strong>Video Compressor</strong><span>Reduce video size without losing quality.</span></a>
+          <a class="tool-card teal" data-category="compress" href="/?target=image"><i data-lucide="image-down"></i><strong>Image Compressor</strong><span>Compress images by exporting optimized WebP.</span></a>
+          <a class="tool-card red" data-category="compress" href="/video-export"><i data-lucide="file-archive"></i><strong>Platform Export</strong><span>Prepare multiple social formats in one ZIP.</span></a>
+          <a class="tool-card purple" data-category="compress" href="/video-to-audio"><i data-lucide="audio-lines"></i><strong>Audio Tools</strong><span>Extract compact audio versions from video.</span></a>
+        </div>
+        <h2>Edit</h2>
+        <div class="tool-grid catalog-grid">
+          <a class="tool-card red" data-category="edit" href="/video-clipper"><i data-lucide="scissors"></i><strong>Video Clipper</strong><span>Cut clips and extract highlights.</span></a>
+          <a class="tool-card blue" data-category="edit" href="/video-resizer"><i data-lucide="crop"></i><strong>Video Resizer</strong><span>Resize videos for any platform.</span></a>
+          <a class="tool-card purple" data-category="edit" href="/video-watermark"><i data-lucide="badge-check"></i><strong>Watermark Tool</strong><span>Add logo and text watermarks.</span></a>
+          <a class="tool-card teal" data-category="edit" href="/video-thumbnails"><i data-lucide="layout-grid"></i><strong>Thumbnail Generator</strong><span>Generate grids and preview frames.</span></a>
+        </div>
+      </section>
+    </main>
+    {% include "partials/site-footer.html" %}
+    <script src="/static/pages.js?v=2.1"></script>
+  </body>
+</html>
