@@ -210,7 +210,7 @@
             if (window.viddashHandleApiAuth?.(err)) {
               message = 'Please sign up to continue.';
             } else {
-              message = err.error || message;
+              message = err.message || err.error || message;
             }
           } catch (e) {}
           throw new Error(message);

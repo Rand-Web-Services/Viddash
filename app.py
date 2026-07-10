@@ -4117,6 +4117,7 @@ def video_clip():
             return jsonify({"error": "Invalid mode"}), 400
 
         vf = None
+        filter_complex = None
         if target:
             tw, th = target
             if mode == "crop":
@@ -4124,12 +4125,13 @@ def video_clip():
             elif mode in ("fit", "pad"):
                 vf = f"scale={tw}:{th}:force_original_aspect_ratio=decrease,pad={tw}:{th}:(ow-iw)/2:(oh-ih)/2:color=black"
             elif mode == "blur":
-                vf = (
-                    f"[0:v]scale={tw}:{th}:force_original_aspect_ratio=increase,boxblur=20:1,"
-                    f"scale={tw}:{th}[bg];"
+                filter_complex = (
+                    f"[0:v]scale={tw}:{th}:force_original_aspect_ratio=increase,crop={tw}:{th},boxblur=20:1[bg];"
                     f"[0:v]scale={tw}:{th}:force_original_aspect_ratio=decrease[fg];"
-                    f"[bg][fg]overlay=(W-w)/2:(H-h)/2"
+                    f"[bg][fg]overlay=(W-w)/2:(H-h)/2,format=yuv420p[vout]"
                 )
+        else:
+            vf = "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p"
         output_files = []
 
         for idx, seg in enumerate(segments, 1):
@@ -4147,15 +4149,21 @@ def video_clip():
             cmd = [
                 ffmpeg_cmd,
                 "-ss", str(start),
-                "-to", str(end),
                 "-i", uploaded_file_path,
+                "-t", str(end - start),
             ]
-            if vf:
+            if filter_complex:
+                cmd.extend(["-filter_complex", filter_complex, "-map", "[vout]", "-map", "0:a?"])
+            elif vf:
                 cmd.extend(["-vf", vf])
+                cmd.extend(["-map", "0:v:0", "-map", "0:a?"])
+            else:
+                cmd.extend(["-map", "0:v:0", "-map", "0:a?"])
             cmd.extend([
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-crf", "22",
+                "-pix_fmt", "yuv420p",
                 "-c:a", "aac",
                 "-b:a", "192k",
                 "-movflags", "+faststart",
@@ -4166,12 +4174,25 @@ def video_clip():
             completed = subprocess.run(
                 cmd,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
                 timeout=1200,
                 check=False
             )
             if completed.returncode != 0 or not os.path.exists(out_path):
-                return jsonify({"error": f"Failed to create clip {idx}"}), 500
+                stderr = sanitize_process_output(completed.stderr)
+                logger.warning(
+                    "video_clip_failed clip=%s aspect=%s mode=%s returncode=%s stderr=%r",
+                    idx,
+                    preset_aspect,
+                    mode,
+                    completed.returncode,
+                    stderr[-500:],
+                )
+                return jsonify({
+                    "error": f"Failed to create clip {idx}",
+                    "details": stderr if app.debug else None,
+                }), 500
 
             output_files.append(out_path)
 
