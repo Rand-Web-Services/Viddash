@@ -90,6 +90,7 @@ if stripe:
     stripe.api_version = "2026-04-22.dahlia"
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+SUPADATA_API_KEY = os.environ.get("SUPADATA_API_KEY")
 MAIL_FROM = os.environ.get("MAIL_FROM", "noreply@viddash.app")
 SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "support@viddash.app")
 ADMIN_EMAILS = {
@@ -5522,6 +5523,107 @@ def _select_caption(captions: list, language: str | None) -> dict | None:
     return captions[0]
 
 
+def _youtube_video_id(url: str) -> str | None:
+    parsed = urlparse(url)
+    hostname = (parsed.hostname or "").lower()
+    if hostname == "youtu.be":
+        return parsed.path.strip("/").split("/", 1)[0] or None
+    query_id = dict(parse_qsl(parsed.query)).get("v")
+    if query_id:
+        return query_id
+    parts = [part for part in parsed.path.split("/") if part]
+    if len(parts) >= 2 and parts[0] in {"shorts", "embed", "live"}:
+        return parts[1]
+    return None
+
+
+def fetch_supadata_transcript(url: str, language: str | None, allow_generate: bool) -> dict:
+    if not SUPADATA_API_KEY:
+        return {"success": False, "error": "Managed transcript fallback is not configured."}
+
+    headers = {"x-api-key": SUPADATA_API_KEY}
+    params = {
+        "url": url,
+        "mode": "auto" if allow_generate else "native",
+        "text": "false",
+    }
+    if language:
+        params["lang"] = language
+
+    try:
+        response = requests.get(
+            "https://api.supadata.ai/v1/transcript",
+            headers=headers,
+            params=params,
+            timeout=65,
+        )
+        generated = response.status_code == 202
+        payload = response.json()
+        if response.status_code == 202 and payload.get("jobId"):
+            job_id = payload["jobId"]
+            deadline = time.monotonic() + 85
+            while time.monotonic() < deadline:
+                time.sleep(1)
+                job_response = requests.get(
+                    f"https://api.supadata.ai/v1/transcript/{job_id}",
+                    headers=headers,
+                    timeout=20,
+                )
+                payload = job_response.json()
+                status = payload.get("status")
+                if status == "completed":
+                    response = job_response
+                    break
+                if status == "failed":
+                    return {"success": False, "error": "Managed speech recognition failed for this video."}
+            else:
+                return {"success": False, "error": "Managed speech recognition is still processing. Please try again shortly."}
+
+        if response.status_code not in {200, 202}:
+            logger.warning(
+                "Supadata transcript request failed status=%s error=%s",
+                response.status_code,
+                payload.get("error"),
+            )
+            return {
+                "success": False,
+                "error": payload.get("details") or payload.get("message") or "Managed transcript retrieval failed.",
+            }
+
+        content = payload.get("content") or payload.get("result", {}).get("content") or []
+        if not isinstance(content, list):
+            return {"success": False, "error": "Managed transcript response did not contain timestamps."}
+        segments = []
+        for item in content:
+            text = _clean_caption_text(str(item.get("text") or ""))
+            if not text:
+                continue
+            start = max(0.0, float(item.get("offset") or 0) / 1000)
+            duration = max(0.0, float(item.get("duration") or 0) / 1000)
+            segments.append({"start": start, "end": start + duration, "text": text})
+        if not segments:
+            return {"success": False, "error": "No speech was detected in this video."}
+
+        billable = response.headers.get("x-billable-requests")
+        if billable:
+            try:
+                generated = generated or int(billable) > 1
+            except ValueError:
+                pass
+        return {
+            "success": True,
+            "segments": segments,
+            "language": payload.get("lang") or segments[0].get("lang") or language,
+            "generated": generated,
+        }
+    except requests.RequestException:
+        logger.exception("Supadata transcript request failed")
+        return {"success": False, "error": "Managed transcript service could not be reached."}
+    except (TypeError, ValueError, KeyError):
+        logger.exception("Supadata returned an invalid transcript response")
+        return {"success": False, "error": "Managed transcript service returned an invalid response."}
+
+
 @app.post("/api/youtube-transcript-studio")
 def youtube_transcript_studio():
     user = get_current_user()
@@ -5564,26 +5666,47 @@ def youtube_transcript_studio():
             source_label = "Creator captions" if source == "manual_captions" else "YouTube automatic captions"
             segments = _parse_vtt_to_segments(caption["data"])
             detected_language = caption.get("lang")
-        elif user["plan"] != "free":
-            whisper_result = transcribe_video_audio(url, cookie_string, language)
-            if not whisper_result.get("success"):
-                return jsonify({"error": "transcription_failed", "message": whisper_result.get("error") or "Could not transcribe this video."}), 500
-            source = "speech_recognition"
-            source_label = "Viddash speech recognition"
-            segments = whisper_result.get("segments") or []
-            detected_language = whisper_result.get("language")
         else:
-            return jsonify({
-                "error": "captions_unavailable",
-                "message": "This video has no usable caption track. Pro can create a transcript from the audio with speech recognition.",
-                "pricing_url": url_for("page_pricing"),
-            }), 422
+            managed_result = fetch_supadata_transcript(
+                url,
+                language,
+                allow_generate=user["plan"] != "free",
+            )
+            if managed_result.get("success"):
+                generated = managed_result.get("generated", False)
+                source = "managed_speech_recognition" if generated else "managed_captions"
+                source_label = "Managed speech recognition" if generated else "Managed YouTube captions"
+                segments = managed_result.get("segments") or []
+                detected_language = managed_result.get("language")
+            elif user["plan"] != "free":
+                whisper_result = transcribe_video_audio(url, cookie_string, language)
+                if not whisper_result.get("success"):
+                    logger.warning(
+                        "YouTube transcript fallbacks failed video_id=%s managed=%s local=%s",
+                        _youtube_video_id(url),
+                        managed_result.get("error"),
+                        whisper_result.get("error"),
+                    )
+                    return jsonify({
+                        "error": "transcription_failed",
+                        "message": managed_result.get("error") or "Could not transcribe this video.",
+                    }), 503
+                source = "speech_recognition"
+                source_label = "Viddash speech recognition"
+                segments = whisper_result.get("segments") or []
+                detected_language = whisper_result.get("language")
+            else:
+                return jsonify({
+                    "error": "captions_unavailable",
+                    "message": managed_result.get("error") or "This video has no usable caption track. Pro can create a transcript from the audio with speech recognition.",
+                    "pricing_url": url_for("page_pricing"),
+                }), 422
 
         intelligence = build_transcript_intelligence(segments, duration)
         if not intelligence["segments"] or not intelligence["transcript"]:
             return jsonify({"error": "empty_transcript", "message": "A usable transcript could not be generated from this video."}), 422
 
-        video_id = video.get("id")
+        video_id = video.get("id") or _youtube_video_id(url)
         canonical_video_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else video.get("webpage_url") or url
         remaining = None if user["plan"] != "free" else max(0, free_daily_limit - used_today - 1)
         record_user_activity(

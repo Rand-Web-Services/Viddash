@@ -95,6 +95,37 @@ class YouTubeTranscriptStudioTests(unittest.TestCase):
         self.assertEqual(response.get_json()["error"], "free_limit_reached")
         extractor.assert_not_called()
 
+    def test_managed_caption_fallback_handles_blocked_server_extraction(self):
+        managed_result = {
+            "success": True,
+            "segments": viddash._parse_vtt_to_segments(SAMPLE_VTT),
+            "language": "en",
+            "generated": False,
+        }
+        with mock.patch.object(viddash, "get_current_user", return_value={"id": None, "plan": "free"}), mock.patch.object(
+            viddash, "get_youtube_transcripts_used_today", return_value=0
+        ), mock.patch.object(
+            viddash,
+            "extract_captions_from_video",
+            return_value={"success": False, "captions": [], "error": "Failed to fetch video info"},
+        ), mock.patch.object(
+            viddash, "fetch_supadata_transcript", return_value=managed_result
+        ) as managed:
+            response = self.client.post(
+                "/api/youtube-transcript-studio",
+                json={"url": "https://www.youtube.com/shorts/abc123", "language": "en"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload["source"], "managed_captions")
+        self.assertEqual(payload["video"]["id"], "abc123")
+        managed.assert_called_once_with(
+            "https://www.youtube.com/shorts/abc123",
+            "en",
+            allow_generate=False,
+        )
+
     def test_rejects_non_youtube_urls(self):
         with mock.patch.object(viddash, "get_current_user", return_value={"id": 42, "plan": "pro"}):
             response = self.client.post(

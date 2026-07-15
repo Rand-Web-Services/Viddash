@@ -30,6 +30,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SUPADATA_API_KEY: ${SUPADATA_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-noreply@viddash.app}
       SUPPORT_EMAIL: ${SUPPORT_EMAIL:-support@viddash.app}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
