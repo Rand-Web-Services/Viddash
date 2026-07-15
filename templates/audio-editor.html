@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="{{ current_locale }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Audio Editor & Podcast Cleaner - Viddash</title>
+    <meta name="description" content="Trim, arrange, merge, and clean audio files for podcasts, interviews, voiceovers, and music." />
+    <link rel="canonical" href="{{ build_canonical_url('audio-editor') if build_canonical_url is defined else 'https://viddash.app/audio-editor' }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+    <link href="/static/audio-editor.css?v=1.0" rel="stylesheet" />
+  </head>
+  <body class="audio-editor-page">
+    {% include "partials/site-header.html" %}
+
+    <main class="audio-main">
+      <section class="audio-hero app-container">
+        <div>
+          <p class="audio-kicker"><span></span> Audio workshop</p>
+          <h1>Cut the noise.<br><em>Keep the story.</em></h1>
+          <p class="audio-hero-copy">Trim takes, combine recordings, and give spoken audio a clear, consistent studio finish in one export.</p>
+        </div>
+        <div class="signal-card" aria-hidden="true">
+          <div class="signal-top"><span>VOICE PRINT</span><span>48 KHZ</span></div>
+          <div class="signal-bars">
+            {% for height in [22,38,58,31,74,48,86,42,67,29,54,78,36,64,92,45,70,33,57,81,40,62,27,51,72,35,60,44,76,30] %}
+              <i style="--bar: {{ height }}%"></i>
+            {% endfor %}
+          </div>
+          <div class="signal-bottom"><strong>READY</strong><span>Non-destructive workflow</span></div>
+        </div>
+      </section>
+
+      <section class="audio-workspace app-container">
+        <form id="audioEditorForm">
+          <div class="workspace-grid">
+            <div class="editor-panel">
+              <div class="panel-heading">
+                <div><span class="step-no">01</span><h2>Build your timeline</h2></div>
+                <span id="trackCount" class="track-count">0 tracks</span>
+              </div>
+
+              <label class="audio-dropzone" id="dropzone" for="audioFiles">
+                <input id="audioFiles" type="file" accept="audio/*,.mp4,.mov,.webm" multiple />
+                <span class="drop-icon"><i data-lucide="audio-lines"></i></span>
+                <strong>Drop audio here or browse</strong>
+                <span>MP3, WAV, M4A, FLAC, OGG, Opus and more</span>
+                <small id="uploadLimit">Up to 10 files</small>
+              </label>
+
+              <div id="emptyTimeline" class="empty-timeline">
+                <i data-lucide="layers-3"></i>
+                <p>Your tracks will appear here in playback order.</p>
+              </div>
+              <div id="trackList" class="track-list" aria-live="polite"></div>
+            </div>
+
+            <aside class="master-panel">
+              <div class="panel-heading compact">
+                <div><span class="step-no">02</span><h2>Master</h2></div>
+              </div>
+
+              <fieldset class="cleanup-fieldset">
+                <legend>Podcast cleanup</legend>
+                <label class="cleanup-option">
+                  <input type="radio" name="cleanup" value="off" />
+                  <span><strong>Original</strong><small>Trim and merge only</small></span>
+                  <i data-lucide="circle"></i>
+                </label>
+                <label class="cleanup-option">
+                  <input type="radio" name="cleanup" value="light" />
+                  <span><strong>Clean</strong><small>Gentle noise and level repair</small></span>
+                  <i data-lucide="sparkles"></i>
+                </label>
+                <label class="cleanup-option featured">
+                  <input type="radio" name="cleanup" value="studio" checked />
+                  <span><b>RECOMMENDED</b><strong>Studio voice</strong><small>Denoise, voice EQ, compression and loudness</small></span>
+                  <i data-lucide="badge-check"></i>
+                </label>
+              </fieldset>
+
+              <div class="format-control">
+                <label for="outputFormat">Export format</label>
+                <select id="outputFormat">
+                  <option value="mp3" selected>MP3 - universal</option>
+                  <option value="m4a">M4A - compact</option>
+                  <option value="wav">WAV - lossless</option>
+                  <option value="flac">FLAC - lossless</option>
+                </select>
+              </div>
+
+              <div class="export-summary">
+                <span><i data-lucide="clock-3"></i> Output length</span>
+                <strong id="outputDuration">00:00</strong>
+              </div>
+              <button id="exportButton" class="export-button" type="submit" disabled>
+                <span>Process & download</span><i data-lucide="arrow-down-to-line"></i>
+              </button>
+              <p id="editorStatus" class="editor-status" role="status"></p>
+              <p class="privacy-note"><i data-lucide="shield-check"></i> Files are deleted after processing. Free accounts include 3 exports per day.</p>
+            </aside>
+          </div>
+        </form>
+      </section>
+
+      <section class="audio-notes app-container">
+        <article><span>01</span><div><h3>Trim precisely</h3><p>Set a start and end time for every recording. The source remains untouched.</p></div></article>
+        <article><span>02</span><div><h3>Arrange freely</h3><p>Move tracks up or down to define the final playback order.</p></div></article>
+        <article><span>03</span><div><h3>Polish speech</h3><p>Studio Voice reduces steady noise, shapes vocal tone, and targets podcast loudness.</p></div></article>
+      </section>
+    </main>
+
+    {% include "partials/site-footer.html" %}
+
+    <script src="/static/pages.js?v=2.1"></script>
+    <script>
+      (() => {
+        const input = document.getElementById('audioFiles');
+        const dropzone = document.getElementById('dropzone');
+        const list = document.getElementById('trackList');
+        const empty = document.getElementById('emptyTimeline');
+        const count = document.getElementById('trackCount');
+        const durationOutput = document.getElementById('outputDuration');
+        const exportButton = document.getElementById('exportButton');
+        const status = document.getElementById('editorStatus');
+        const form = document.getElementById('audioEditorForm');
+        const uploadLimit = document.getElementById('uploadLimit');
+        let tracks = [];
+
+        fetch('/api/max-upload-size').then(response => response.json()).then(data => {
+          uploadLimit.textContent = `Up to 10 files / ${data.max_size_mb} MB combined`;
+        }).catch(() => {});
+
+        ['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => {
+          event.preventDefault();
+          dropzone.classList.add('is-dragging');
+        }));
+        ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => {
+          event.preventDefault();
+          dropzone.classList.remove('is-dragging');
+        }));
+        dropzone.addEventListener('drop', event => addFiles(event.dataTransfer.files));
+        input.addEventListener('change', () => {
+          addFiles(input.files);
+          input.value = '';
+        });
+
+        function addFiles(fileList) {
+          const incoming = Array.from(fileList).filter(file => file.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|aiff?|flac|ogg|opus|wma|webm|mp4|mov)$/i.test(file.name));
+          if (!incoming.length) return setStatus('Choose a supported audio file.', true);
+          if (tracks.length + incoming.length > 10) return setStatus('You can add up to 10 tracks.', true);
+          incoming.forEach(file => {
+            const url = URL.createObjectURL(file);
+            const audio = new Audio(url);
+            const track = { id: crypto.randomUUID(), file, url, duration: 0, start: 0, end: null, ready: false, preview: true };
+            tracks.push(track);
+            audio.addEventListener('loadedmetadata', () => {
+              track.duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+              track.end = track.duration;
+              track.ready = track.duration > 0;
+              render();
+            }, { once: true });
+            audio.addEventListener('error', () => {
+              if (track.duration > 0) return;
+              track.ready = true;
+              track.preview = false;
+              track.end = null;
+              setStatus(`Preview is unavailable for ${file.name}, but it can still be processed in full.`);
+              render();
+            }, { once: true });
+          });
+          setStatus('');
+          render();
+        }
+
+        function render() {
+          empty.hidden = tracks.length > 0;
+          count.textContent = `${tracks.length} track${tracks.length === 1 ? '' : 's'}`;
+          exportButton.disabled = !tracks.length || tracks.some(track => !track.ready);
+          list.innerHTML = tracks.map((track, index) => `
+            <article class="audio-track" data-id="${track.id}">
+              <div class="track-order"><span>${String(index + 1).padStart(2, '0')}</span><i data-lucide="grip-vertical"></i></div>
+              <div class="track-main">
+                <div class="track-title-row">
+                  <div><strong title="${escapeHtml(track.file.name)}">${escapeHtml(track.file.name)}</strong><span>${formatBytes(track.file.size)} · ${track.duration ? formatTime(track.duration) : (track.ready ? 'Duration read during export' : 'Reading…')}</span></div>
+                  ${track.preview ? `<audio controls preload="metadata" src="${track.url}"></audio>` : '<span class="preview-unavailable">Browser preview unavailable</span>'}
+                </div>
+                <div class="trim-row">
+                  <label>Start <input class="trim-input" data-field="start" type="number" min="0" ${track.duration ? `max="${track.duration}"` : ''} step="0.01" value="${track.start.toFixed(2)}" ${track.ready ? '' : 'disabled'}><small>sec</small></label>
+                  <div class="trim-line"><span style="--start:${track.duration ? track.start / track.duration * 100 : 0}%;--end:${track.duration && track.end != null ? track.end / track.duration * 100 : 100}%"></span></div>
+                  <label>End <input class="trim-input" data-field="end" type="number" min="0" ${track.duration ? `max="${track.duration}"` : ''} step="0.01" value="${track.end == null ? '' : track.end.toFixed(2)}" placeholder="Full" ${track.ready ? '' : 'disabled'}><small>sec</small></label>
+                </div>
+              </div>
+              <div class="track-actions">
+                <button type="button" data-action="up" title="Move up" ${index === 0 ? 'disabled' : ''}><i data-lucide="arrow-up"></i></button>
+                <button type="button" data-action="down" title="Move down" ${index === tracks.length - 1 ? 'disabled' : ''}><i data-lucide="arrow-down"></i></button>
+                <button type="button" data-action="remove" title="Remove"><i data-lucide="x"></i></button>
+              </div>
+            </article>`).join('');
+          updateDuration();
+          if (window.lucide) window.lucide.createIcons();
+        }
+
+        list.addEventListener('click', event => {
+          const button = event.target.closest('button[data-action]');
+          if (!button) return;
+          const card = button.closest('.audio-track');
+          const index = tracks.findIndex(track => track.id === card.dataset.id);
+          if (button.dataset.action === 'remove') return removeTrack(card.dataset.id);
+          const target = button.dataset.action === 'up' ? index - 1 : index + 1;
+          if (target < 0 || target >= tracks.length) return;
+          [tracks[index], tracks[target]] = [tracks[target], tracks[index]];
+          render();
+        });
+
+        list.addEventListener('change', event => {
+          if (!event.target.matches('.trim-input')) return;
+          const track = tracks.find(item => item.id === event.target.closest('.audio-track').dataset.id);
+          if (event.target.dataset.field === 'end' && event.target.value === '') {
+            track.end = null;
+            setStatus('');
+            render();
+            return;
+          }
+          const value = Number(event.target.value);
+          if (!Number.isFinite(value)) return;
+          track[event.target.dataset.field] = track.duration ? Math.max(0, Math.min(value, track.duration)) : Math.max(0, value);
+          if (track.end != null && track.end <= track.start) {
+            setStatus('Each track end time must be after its start time.', true);
+          } else {
+            setStatus('');
+          }
+          render();
+        });
+
+        function removeTrack(id) {
+          const index = tracks.findIndex(track => track.id === id);
+          if (index < 0) return;
+          URL.revokeObjectURL(tracks[index].url);
+          tracks.splice(index, 1);
+          render();
+        }
+
+        function updateDuration() {
+          const durationKnown = tracks.every(track => track.end != null);
+          const seconds = tracks.reduce((sum, track) => sum + Math.max(0, (track.end ?? track.start) - track.start), 0);
+          durationOutput.textContent = durationKnown ? formatTime(seconds) : 'Calculated on export';
+        }
+
+        form.addEventListener('submit', async event => {
+          event.preventDefault();
+          if (!tracks.length) return;
+          if (tracks.some(track => !track.ready || (track.end != null && track.end <= track.start))) return setStatus('Fix the highlighted trim times before exporting.', true);
+          exportButton.disabled = true;
+          exportButton.classList.add('is-processing');
+          exportButton.querySelector('span').textContent = 'Processing audio…';
+          setStatus('Uploading, editing, and mastering your audio. Longer files may take a few minutes.');
+          try {
+            const data = new FormData();
+            tracks.forEach(track => data.append('files', track.file));
+            data.append('edits', JSON.stringify(tracks.map(track => ({ start: track.start, end: track.end }))));
+            data.append('cleanup', document.querySelector('input[name="cleanup"]:checked').value);
+            data.append('format', document.getElementById('outputFormat').value);
+            const response = await fetch('/api/audio/edit', { method: 'POST', body: data });
+            if (!response.ok) {
+              let payload = {};
+              try { payload = await response.json(); } catch (_) {}
+              if (window.viddashHandleApiAuth?.(payload)) throw new Error(payload.message || 'Account access required.');
+              throw new Error(payload.message || payload.error || `Export failed (HTTP ${response.status}).`);
+            }
+            const blob = await response.blob();
+            const disposition = response.headers.get('Content-Disposition') || '';
+            const match = /filename="?([^";]+)"?/i.exec(disposition);
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = match ? match[1] : `viddash-audio-edit.${document.getElementById('outputFormat').value}`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+            setStatus('Your edited audio is ready and the download has started.');
+          } catch (error) {
+            setStatus(error.message, true);
+          } finally {
+            exportButton.disabled = !tracks.length;
+            exportButton.classList.remove('is-processing');
+            exportButton.querySelector('span').textContent = 'Process & download';
+          }
+        });
+
+        function setStatus(message, isError = false) {
+          status.textContent = message;
+          status.classList.toggle('is-error', isError);
+        }
+        function formatTime(value) {
+          const seconds = Math.max(0, Math.round(value || 0));
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          const remainder = seconds % 60;
+          return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}` : `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+        }
+        function formatBytes(value) {
+          if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+          return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+        }
+        function escapeHtml(value) {
+          const node = document.createElement('div');
+          node.textContent = value;
+          return node.innerHTML;
+        }
+      })();
+    </script>
+  </body>
+</html>

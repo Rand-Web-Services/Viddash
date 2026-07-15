@@ -19,6 +19,7 @@ import csv
 import secrets
 import sqlite3
 import hashlib
+import math
 import time
 import threading
 from html import escape
@@ -127,6 +128,7 @@ PUBLIC_PAGES = {
     "youtube-downloader": "youtube-downloader.html",
     "tiktok-downloader": "tiktok-downloader.html",
     "video-to-audio": "video-to-audio.html",
+    "audio-editor": "audio-editor.html",
     "video-resizer": "video-resizer.html",
     "video-export": "video-export.html",
     "video-compress": "video-compress.html",
@@ -885,6 +887,20 @@ def get_user_activity(user_id: int, limit: int = 25):
             """,
             (user_id, limit),
         ).fetchall()
+
+
+def get_audio_edits_used_today(user_id: int) -> int:
+    day_start = datetime.utcnow().date().isoformat() + "T00:00:00"
+    with get_db() as conn:
+        return int(scalar(
+            conn,
+            """
+            SELECT COUNT(*)
+            FROM user_activity
+            WHERE user_id = ? AND action = ? AND status = ? AND created_at >= ?
+            """,
+            (user_id, "media.audio_edit", "success", day_start),
+        ))
 
 
 def scalar(conn, sql: str, params=(), default=0):
@@ -2303,6 +2319,11 @@ def page_tiktok():
 @app.get("/video-to-audio")
 def page_video_to_audio():
     return render_public_page("video-to-audio.html", "video-to-audio")
+
+
+@app.get("/audio-editor")
+def page_audio_editor():
+    return render_public_page("audio-editor.html", "audio-editor")
 
 
 @app.get("/video-resizer")
@@ -3977,6 +3998,220 @@ def _find_media_binary(name: str) -> str:
         if os.path.exists(path) or path == name:
             return path
     return name
+
+
+def _probe_audio_duration(path: str) -> float:
+    """Return the duration of the first audio stream, rejecting non-audio inputs."""
+    cmd = [
+        _find_media_binary("ffprobe"),
+        "-v", "error",
+        "-select_streams", "a:0",
+        "-show_entries", "stream=codec_type:format=duration",
+        "-of", "json",
+        path,
+    ]
+    completed = subprocess.run(cmd, capture_output=True, text=True, timeout=45, check=False)
+    if completed.returncode != 0:
+        raise ValueError("One of the files could not be read as audio.")
+    try:
+        payload = json.loads(completed.stdout or "{}")
+        streams = payload.get("streams") or []
+        duration = float((payload.get("format") or {}).get("duration"))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        raise ValueError("One of the files has an unknown audio duration.")
+    if not streams or not math.isfinite(duration) or duration <= 0:
+        raise ValueError("One of the files does not contain a usable audio track.")
+    return duration
+
+
+@app.post("/api/audio/edit")
+def audio_edit():
+    """Trim, merge, and optionally clean uploaded audio tracks."""
+    user = get_current_user()
+    if not user:
+        return api_error("Log in to use the audio editor.", 401, "login_required")
+
+    free_daily_limit = 3
+    if user["plan"] == "free":
+        used_today = get_audio_edits_used_today(user["id"])
+        if used_today >= free_daily_limit:
+            return jsonify({
+                "error": "free_limit_reached",
+                "message": "You have used all 3 free audio exports for today. Upgrade for unlimited processing or try again tomorrow.",
+                "limit": free_daily_limit,
+                "used": used_today,
+                "pricing_url": url_for("page_pricing"),
+            }), 429
+
+    files = [file for file in request.files.getlist("files") if file and file.filename]
+    if not files:
+        return jsonify({"error": "Choose at least one audio file."}), 400
+    if len(files) > 10:
+        return jsonify({"error": "You can merge up to 10 audio files at once."}), 400
+
+    output_format = (request.form.get("format") or "mp3").strip().lower()
+    if output_format not in {"mp3", "m4a", "wav", "flac"}:
+        return jsonify({"error": "Invalid format. Use mp3, m4a, wav, or flac."}), 400
+
+    cleanup = (request.form.get("cleanup") or "off").strip().lower()
+    if cleanup not in {"off", "light", "studio"}:
+        return jsonify({"error": "Invalid cleanup profile."}), 400
+
+    try:
+        edits = json.loads(request.form.get("edits") or "[]")
+    except json.JSONDecodeError:
+        return jsonify({"error": "Invalid edit data."}), 400
+    if not isinstance(edits, list) or len(edits) != len(files):
+        return jsonify({"error": "Each audio file needs matching trim settings."}), 400
+
+    tmpdir = tempfile.mkdtemp(prefix="audio_edit_")
+    keep_tmpdir = False
+    try:
+        input_paths = []
+        durations = []
+        total_size = 0
+        allowed_extensions = {
+            ".aac", ".aiff", ".aif", ".alac", ".flac", ".m4a", ".mp3",
+            ".ogg", ".opus", ".wav", ".wma", ".webm", ".mp4", ".mov",
+        }
+
+        for index, file in enumerate(files):
+            extension = os.path.splitext(os.path.basename(file.filename))[1].lower()
+            if extension not in allowed_extensions:
+                return jsonify({"error": f"Unsupported audio type: {extension or 'unknown'}"}), 415
+            file.seek(0, os.SEEK_END)
+            file_size = file.tell()
+            file.seek(0)
+            total_size += file_size
+            if total_size > MAX_FILE_UPLOAD_BYTES:
+                max_size_mb = MAX_FILE_UPLOAD_BYTES // (1024 * 1024)
+                return jsonify({"error": f"Combined files exceed the {max_size_mb} MB upload limit."}), 413
+
+            input_path = os.path.join(tmpdir, f"input_{index:02d}{extension}")
+            file.save(input_path)
+            input_paths.append(input_path)
+            durations.append(_probe_audio_duration(input_path))
+
+        trim_ranges = []
+        output_duration = 0.0
+        for index, (edit, duration) in enumerate(zip(edits, durations), 1):
+            if not isinstance(edit, dict):
+                return jsonify({"error": f"Invalid trim settings for track {index}."}), 400
+            try:
+                start = float(edit.get("start", 0))
+                raw_end = edit.get("end")
+                end = duration if raw_end in (None, "") else float(raw_end)
+            except (TypeError, ValueError):
+                return jsonify({"error": f"Track {index} has invalid trim times."}), 400
+            if not all(math.isfinite(value) for value in (start, end)):
+                return jsonify({"error": f"Track {index} has invalid trim times."}), 400
+            if start < 0 or end <= start or end > duration + 0.25:
+                return jsonify({"error": f"Track {index} trim must stay within its {duration:.1f}s duration."}), 400
+            end = min(end, duration)
+            trim_ranges.append((start, end))
+            output_duration += end - start
+
+        if output_duration > 4 * 60 * 60:
+            return jsonify({"error": "The edited result cannot exceed four hours."}), 400
+
+        ffmpeg_cmd = _find_media_binary("ffmpeg")
+        cmd = [ffmpeg_cmd, "-hide_banner", "-loglevel", "error", "-y"]
+        for input_path in input_paths:
+            cmd.extend(["-i", input_path])
+
+        filter_parts = []
+        track_labels = []
+        for index, (start, end) in enumerate(trim_ranges):
+            label = f"track{index}"
+            filter_parts.append(
+                f"[{index}:a:0]atrim=start={start:.6f}:end={end:.6f},"
+                f"asetpts=PTS-STARTPTS,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[{label}]"
+            )
+            track_labels.append(f"[{label}]")
+
+        if len(track_labels) == 1:
+            filter_parts.append(f"{track_labels[0]}anull[joined]")
+        else:
+            filter_parts.append(f"{''.join(track_labels)}concat=n={len(track_labels)}:v=0:a=1[joined]")
+
+        cleanup_filters = {
+            "off": "anull",
+            "light": "highpass=f=70,afftdn=nf=-30,loudnorm=I=-16:LRA=9:TP=-1.5,alimiter=limit=0.95",
+            "studio": (
+                "highpass=f=75,lowpass=f=16000,afftdn=nf=-25:tn=1,"
+                "equalizer=f=180:t=q:w=1:g=-2,equalizer=f=3500:t=q:w=1:g=3,"
+                "acompressor=threshold=0.09:ratio=3:attack=20:release=250:makeup=2,"
+                "loudnorm=I=-16:LRA=7:TP=-1.5,alimiter=limit=0.95"
+            ),
+        }
+        filter_parts.append(f"[joined]{cleanup_filters[cleanup]}[outa]")
+
+        output_path = os.path.join(tmpdir, f"viddash-audio-edit.{output_format}")
+        codec_options = {
+            "mp3": ["-c:a", "libmp3lame", "-b:a", "192k"],
+            "m4a": ["-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart"],
+            "wav": ["-c:a", "pcm_s16le"],
+            "flac": ["-c:a", "flac"],
+        }
+        cmd.extend(["-filter_complex", ";".join(filter_parts), "-map", "[outa]"])
+        cmd.extend(codec_options[output_format])
+        cmd.append(output_path)
+
+        completed = subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=1200,
+            check=False,
+        )
+        if completed.returncode != 0 or not os.path.exists(output_path):
+            stderr = sanitize_process_output(completed.stderr)
+            logger.warning("audio_edit_failed cleanup=%s tracks=%s stderr=%r", cleanup, len(files), stderr[-500:])
+            return jsonify({
+                "error": "Audio processing failed. Check the files and trim times.",
+                "details": stderr if app.debug else None,
+            }), 500
+
+        mime_types = {
+            "mp3": "audio/mpeg",
+            "m4a": "audio/mp4",
+            "wav": "audio/wav",
+            "flac": "audio/flac",
+        }
+        response = send_file(
+            output_path,
+            as_attachment=True,
+            download_name=os.path.basename(output_path),
+            mimetype=mime_types[output_format],
+            conditional=True,
+            max_age=0,
+        )
+        record_user_activity(
+            user["id"],
+            "media.audio_edit",
+            f"Edited and exported {len(files)} audio track(s).",
+            "success",
+            {
+                "cleanup": cleanup,
+                "duration_seconds": round(output_duration, 2),
+                "format": output_format,
+                "tracks": len(files),
+            },
+        )
+        keep_tmpdir = True
+        response.call_on_close(lambda: shutil.rmtree(tmpdir, ignore_errors=True))
+        return response
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "Audio processing timed out after 20 minutes."}), 504
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        logger.exception("Unexpected audio editor failure")
+        return jsonify({"error": "Audio processing failed unexpectedly."}), 500
+    finally:
+        if not keep_tmpdir:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 def _download_video_from_url(url: str, cookie_string: str | None, tmpdir: str) -> str:
