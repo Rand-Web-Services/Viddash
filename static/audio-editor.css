@@ -634,6 +634,107 @@
   line-height: 1.65;
 }
 
+.audio-seo {
+  padding-bottom: 96px;
+}
+
+.audio-seo-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(280px, 0.65fr);
+  gap: 24px 80px;
+  padding: 52px 0;
+  border-top: 1px solid #c8d0c5;
+}
+
+.audio-seo-intro .audio-kicker {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.audio-seo-intro h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4.5vw, 4rem);
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.audio-seo-intro > p:last-child {
+  margin: 0;
+  color: #53665d;
+  line-height: 1.8;
+}
+
+.audio-answer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid #c8d0c5;
+  background: #c8d0c5;
+  gap: 1px;
+}
+
+.audio-answer-grid article {
+  min-height: 240px;
+  padding: 28px;
+  background: #fbfcf8;
+}
+
+.audio-answer-grid article::before {
+  display: block;
+  width: 34px;
+  height: 4px;
+  margin-bottom: 54px;
+  content: "";
+  background: var(--audio-lime);
+  box-shadow: 12px 0 0 var(--audio-green);
+}
+
+.audio-answer-grid h3,
+.audio-faq h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.audio-answer-grid p,
+.audio-faq p {
+  margin: 0;
+  color: #5c6f66;
+  font-size: 0.79rem;
+  line-height: 1.72;
+}
+
+.audio-faq {
+  display: grid;
+  grid-template-columns: 0.55fr 1fr;
+  gap: 70px;
+  margin-top: 72px;
+}
+
+.audio-faq-heading span {
+  color: var(--audio-green);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.audio-faq-heading h2 {
+  margin: 10px 0 0;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+.audio-faq > div:last-child {
+  border-top: 1px solid #c8d0c5;
+}
+
+.audio-faq article {
+  padding: 22px 0;
+  border-bottom: 1px solid #c8d0c5;
+}
+
 .dark-mode.audio-editor-page {
   --audio-ink: #eaf2e8;
   --audio-cream: #111914;
@@ -645,7 +746,8 @@
 .dark-mode .master-panel,
 .dark-mode .audio-track,
 .dark-mode .cleanup-option,
-.dark-mode .format-control select {
+.dark-mode .format-control select,
+.dark-mode .audio-answer-grid article {
   color: #eaf2e8;
   background: #18231d;
 }
@@ -685,6 +787,12 @@
   .master-panel .panel-heading,
   .master-panel .cleanup-fieldset {
     grid-column: 1 / -1;
+  }
+
+  .audio-seo-intro,
+  .audio-faq {
+    grid-template-columns: 1fr;
+    gap: 28px;
   }
 }
 
@@ -759,5 +867,17 @@
   .audio-notes {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  .audio-answer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .audio-answer-grid article {
+    min-height: auto;
+  }
+
+  .audio-answer-grid article::before {
+    margin-bottom: 28px;
   }
 }

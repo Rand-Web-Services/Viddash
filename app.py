@@ -22,7 +22,7 @@ import hashlib
 import math
 import time
 import threading
-from html import escape
+from html import escape, unescape
 from markupsafe import Markup
 from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -137,6 +137,140 @@ PUBLIC_PAGES = {
     "video-clipper": "video-clipper.html",
     "video-thumbnails": "video-thumbnails.html",
     "transcript-generator": "transcript-generator.html",
+}
+
+SEO_NOINDEX_PAGES = {"login", "signup", "api-documentation"}
+SEO_INDEXED_LOCALES = {DEFAULT_LOCALE}
+SEO_TOOL_PAGES = {
+    "": {"category": "MultimediaApplication", "free": True},
+    "tools": {"category": "MultimediaApplication", "free": True},
+    "facebook-downloader": {"category": "MultimediaApplication", "free": True},
+    "youtube-downloader": {"category": "MultimediaApplication", "free": True},
+    "tiktok-downloader": {"category": "MultimediaApplication", "free": True},
+    "audio-editor": {"category": "MultimediaApplication", "free": True},
+    "video-to-audio": {"category": "MultimediaApplication", "free": False},
+    "video-converter": {"category": "MultimediaApplication", "free": False},
+    "video-resizer": {"category": "MultimediaApplication", "free": False},
+    "video-export": {"category": "MultimediaApplication", "free": False},
+    "video-compress": {"category": "MultimediaApplication", "free": False},
+    "video-watermark": {"category": "MultimediaApplication", "free": False},
+    "video-clipper": {"category": "MultimediaApplication", "free": False},
+    "video-thumbnails": {"category": "MultimediaApplication", "free": False},
+    "transcript-generator": {"category": "MultimediaApplication", "free": False},
+    "utm-builder": {"category": "BusinessApplication", "free": False},
+}
+
+SEO_PAGE_FAQS = {
+    "audio-editor": [
+        (
+            "Can I merge MP3 files online with Viddash?",
+            "Yes. Add up to 10 audio files, arrange them in playback order, set optional trim points, and export one merged MP3, M4A, WAV, or FLAC file.",
+        ),
+        (
+            "How do I cut part of an audio file?",
+            "Upload the recording and enter the start and end times you want to keep. Viddash removes the audio before the start time and after the end time during export.",
+        ),
+        (
+            "What does Studio Voice cleanup change?",
+            "Studio Voice reduces steady background noise, removes very low rumble, shapes speech frequencies, compresses volume differences, and normalizes the final loudness for spoken-word listening.",
+        ),
+        (
+            "Are uploaded audio files stored?",
+            "No. Uploaded files are held temporarily for the requested edit and deleted after processing completes.",
+        ),
+        (
+            "How many audio files can a free account process?",
+            "Free accounts include three successful audio editor exports per day. Failed processing attempts do not use the daily allowance.",
+        ),
+    ],
+    "video-converter": [
+        (
+            "What is the best video format for most devices?",
+            "MP4 is the safest default for most phones, browsers, social platforms, and editing apps. Viddash exports MP4 with H.264 video and AAC audio for broad compatibility.",
+        ),
+        (
+            "Does converting a video reduce its quality?",
+            "Video conversion usually requires re-encoding, which can introduce some quality loss. Choose High Quality and keep the original resolution and frame rate when preserving detail matters most.",
+        ),
+        (
+            "Should I choose MP4, MOV, WebM, or GIF?",
+            "Choose MP4 for general sharing, MOV for Apple and editing workflows, WebM for web delivery, and GIF only for short silent animations. MKV is useful when container flexibility matters more than device compatibility.",
+        ),
+        (
+            "Can a GIF export include audio?",
+            "No. GIF is an image animation format and does not support audio. Choose MP4, MOV, MKV, AVI, or WebM when the converted file needs sound.",
+        ),
+        (
+            "Are uploaded videos stored after conversion?",
+            "No. Uploaded videos and generated conversion files are temporary and are deleted after the requested export is delivered.",
+        ),
+    ],
+    "video-compress": [
+        (
+            "How can I compress a video without obvious quality loss?",
+            "Use a moderate target size, keep H.264 for compatibility, and avoid reducing the file far below its original size. Larger reductions require a lower bitrate and make compression artifacts more likely.",
+        ),
+        (
+            "Is H.264 or H.265 better for video compression?",
+            "H.264 plays on more devices and platforms. H.265 can produce a smaller file at similar visual quality, but older browsers, devices, and editing apps may not support it.",
+        ),
+        (
+            "Will the compressed video match my target size exactly?",
+            "Viddash calculates a video bitrate from the duration, target size, and selected audio bitrate. The result should be close, but container overhead and the source content can cause a small difference.",
+        ),
+        (
+            "Does compression change the video dimensions?",
+            "The batch compressor focuses on bitrate and file size rather than changing the frame dimensions. Use the Video Resizer when you need a different resolution or aspect ratio.",
+        ),
+        (
+            "Can I create several compressed sizes at once?",
+            "Yes. Select preset sizes or enter custom megabyte targets. Viddash processes each version and returns the completed files together in one ZIP archive.",
+        ),
+    ],
+    "transcript-generator": [
+        (
+            "What platforms are supported?",
+            "Viddash supports local audio and video uploads plus URLs from platforms handled by the downloader, including YouTube, TikTok, Facebook, Instagram, and X. A source must be accessible and permitted for you to process.",
+        ),
+        (
+            "How accurate is automatic transcription?",
+            "Accuracy depends on microphone quality, background noise, speaker overlap, accents, language, and specialist vocabulary. Clear speech with little background noise produces the strongest result and every important transcript should be reviewed.",
+        ),
+        (
+            "How long does transcription take?",
+            "Existing caption tracks can be extracted quickly. Speech recognition takes longer and processing time depends on recording length, audio quality, server load, and the available hardware.",
+        ),
+        (
+            "Which transcript format should I download?",
+            "Use SRT for most video editors and subtitle uploads, VTT for HTML5 web video, TXT for a readable transcript without timing, and JSON when an application needs structured segments and timestamps.",
+        ),
+        (
+            "Can I transcribe a private video?",
+            "You can process a private source only when you are authorized to access it. For supported URL sources, session cookies can provide that access; local files can be uploaded directly from your device.",
+        ),
+    ],
+    "video-resizer": [
+        (
+            "What video size should I use for Reels, TikTok, or Shorts?",
+            "Use a 9:16 vertical frame at 1080 by 1920 pixels for Instagram Reels and Stories, TikTok videos, and YouTube Shorts.",
+        ),
+        (
+            "What aspect ratio works best for an Instagram feed video?",
+            "A 4:5 frame at 1080 by 1350 pixels uses more vertical feed space, while 1:1 at 1080 by 1080 pixels is the standard square option.",
+        ),
+        (
+            "Will resizing crop part of my video?",
+            "Yes. The current presets crop the source to fill the selected aspect ratio, so content near the outer edges can be removed. Keep faces, captions, and logos near the center safe area.",
+        ),
+        (
+            "What format does the resized video use?",
+            "Viddash exports resized videos as MP4 with H.264 video and AAC audio, a combination designed for broad social-platform and device compatibility.",
+        ),
+        (
+            "Does Viddash keep uploaded videos?",
+            "No. The source and resized output are temporary processing files and are deleted after the export is delivered.",
+        ),
+    ],
 }
 
 TRANSLATIONS = {
@@ -435,7 +569,7 @@ def build_alternate_links(path):
     links = [
         f'<link rel="alternate" hreflang="en" href="{escape(default_url, quote=True)}" />'
     ]
-    for locale in sorted(LOCALE_PREFIXES):
+    for locale in sorted(SEO_INDEXED_LOCALES - {DEFAULT_LOCALE}):
         href = f"{root}/{locale}/{page_path}" if page_path else f"{root}/{locale}/"
         links.append(f'<link rel="alternate" hreflang="{locale}" href="{escape(href, quote=True)}" />')
     links.append(f'<link rel="alternate" hreflang="x-default" href="{escape(default_url, quote=True)}" />')
@@ -528,6 +662,102 @@ def record_request_telemetry(resp: Response) -> None:
         logger.exception("Could not record request telemetry path=%s", request.path)
 
 
+def _extract_head_text(body: str, pattern: str, default: str) -> str:
+    match = re.search(pattern, body, flags=re.IGNORECASE | re.DOTALL)
+    if not match:
+        return default
+    return unescape(re.sub(r"<[^>]+>", "", match.group(1))).strip() or default
+
+
+def _upsert_head_meta(body: str, attribute: str, key: str, content: str) -> str:
+    tag = f'<meta {attribute}="{escape(key, quote=True)}" content="{escape(content, quote=True)}" />'
+    pattern = rf'<meta\s+{attribute}=["\']{re.escape(key)}["\'][^>]*>'
+    if re.search(pattern, body, flags=re.IGNORECASE):
+        return re.sub(pattern, tag, body, count=1, flags=re.IGNORECASE)
+    return body.replace("</head>", f"    {tag}\n  </head>", 1)
+
+
+def build_public_page_schema(path: str, title: str, description: str) -> dict:
+    root = app_base_url()
+    canonical = build_canonical_url(path)
+    page_name = re.split(r"\s+[\-—–]\s+", title, maxsplit=1)[0].strip()
+    graph = [
+        {
+            "@type": "Organization",
+            "@id": f"{root}/#organization",
+            "name": "Viddash App",
+            "url": f"{root}/",
+            "logo": {
+                "@type": "ImageObject",
+                "url": f"{root}/static/viddash-logo.png",
+                "width": 1247,
+                "height": 313,
+            },
+            "email": SUPPORT_EMAIL,
+        },
+        {
+            "@type": "WebSite",
+            "@id": f"{root}/#website",
+            "url": f"{root}/",
+            "name": "Viddash App",
+            "description": "Online tools for downloading, converting, compressing, editing, and transcribing media files.",
+            "publisher": {"@id": f"{root}/#organization"},
+            "inLanguage": getattr(g, "locale", DEFAULT_LOCALE),
+        },
+    ]
+
+    if path:
+        graph.append({
+            "@type": "BreadcrumbList",
+            "@id": f"{canonical}#breadcrumb",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "Home", "item": f"{root}/"},
+                {"@type": "ListItem", "position": 2, "name": page_name, "item": canonical},
+            ],
+        })
+
+    tool = SEO_TOOL_PAGES.get(path)
+    if tool:
+        free = bool(tool["free"])
+        graph.append({
+            "@type": "WebApplication",
+            "@id": f"{canonical}#application",
+            "name": page_name,
+            "url": canonical,
+            "description": description,
+            "applicationCategory": tool["category"],
+            "applicationSubCategory": "Online media tool",
+            "operatingSystem": "Any operating system with a modern web browser",
+            "browserRequirements": "JavaScript and file upload support",
+            "isAccessibleForFree": free,
+            "offers": {
+                "@type": "Offer",
+                "price": "0.00" if free else "15.00",
+                "priceCurrency": "USD",
+                "category": "Free tier" if free else "Pro subscription",
+                "url": canonical if free else f"{root}/pricing",
+            },
+            "publisher": {"@id": f"{root}/#organization"},
+        })
+
+    faqs = SEO_PAGE_FAQS.get(path)
+    if faqs:
+        graph.append({
+            "@type": "FAQPage",
+            "@id": f"{canonical}#faq",
+            "mainEntity": [
+                {
+                    "@type": "Question",
+                    "name": question,
+                    "acceptedAnswer": {"@type": "Answer", "text": answer},
+                }
+                for question, answer in faqs
+            ],
+        })
+
+    return {"@context": "https://schema.org", "@graph": graph}
+
+
 # Security headers
 @app.after_request
 def add_security_headers(resp: Response):
@@ -542,6 +772,42 @@ def add_security_headers(resp: Response):
             body = body.replace("</head>", f"    {canonical}\n  </head>", 1)
         alternates = build_alternate_links(g.public_page_path)
         body = body.replace("</head>", f"    {Markup(alternates)}\n  </head>", 1)
+        title = _extract_head_text(body, r"<title[^>]*>(.*?)</title>", "Viddash App")
+        description = _extract_head_text(
+            body,
+            r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']\s*/?>',
+            "Online tools for converting, editing, and preparing media files.",
+        )
+        canonical_url = build_canonical_url(g.public_page_path)
+        share_image = f"{app_base_url()}/static/og-placeholder.svg"
+        is_indexable = (
+            g.public_page_path not in SEO_NOINDEX_PAGES
+            and locale in SEO_INDEXED_LOCALES
+        )
+        robots = "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" if is_indexable else "noindex,follow"
+        for attribute, key, value in (
+            ("name", "robots", robots),
+            ("property", "og:type", "website"),
+            ("property", "og:site_name", "Viddash App"),
+            ("property", "og:title", title),
+            ("property", "og:description", description),
+            ("property", "og:url", canonical_url),
+            ("property", "og:image", share_image),
+            ("property", "og:image:width", "1200"),
+            ("property", "og:image:height", "630"),
+            ("name", "twitter:card", "summary_large_image"),
+            ("name", "twitter:title", title),
+            ("name", "twitter:description", description),
+            ("name", "twitter:image", share_image),
+        ):
+            body = _upsert_head_meta(body, attribute, key, value)
+        if is_indexable:
+            schema = json.dumps(
+                build_public_page_schema(g.public_page_path, title, description),
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).replace("<", "\\u003c")
+            body = body.replace("</head>", f'    <script type="application/ld+json">{schema}</script>\n  </head>', 1)
         resp.set_data(body)
         resp.headers["Content-Length"] = str(len(resp.get_data()))
     resp.headers.setdefault("X-Frame-Options", "DENY")
@@ -2263,6 +2529,11 @@ def robots_txt():
     base = app_base_url()
     body = f"""User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /api/
+Disallow: /auth/
+Disallow: /billing/
 Sitemap: {base}/sitemap.xml
 """
     return Response(body, mimetype="text/plain")
@@ -2271,7 +2542,7 @@ Sitemap: {base}/sitemap.xml
 @app.get("/sitemap.xml")
 def sitemap_xml():
     base = app_base_url()
-    locales = [DEFAULT_LOCALE] + sorted(LOCALE_PREFIXES)
+    locales = [DEFAULT_LOCALE] + sorted(SEO_INDEXED_LOCALES - {DEFAULT_LOCALE})
 
     def url_for_locale(path, locale):
         clean = path.strip("/")
@@ -2281,6 +2552,8 @@ def sitemap_xml():
 
     items = []
     for path in PUBLIC_PAGES:
+        if path in SEO_NOINDEX_PAGES:
+            continue
         for locale in locales:
             loc = url_for_locale(path, locale)
             alternates = "".join(

@@ -3,13 +3,14 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Video Converter - Viddash App</title>
-    <meta name="description" content="Upload a video and convert it to MP4, MOV, AVI, MKV, WebM, or GIF with Viddash App." />
+    <title>Online Video Converter for MP4, MOV, WebM & GIF - Viddash</title>
+    <meta name="description" content="Convert videos to MP4, MOV, AVI, MKV, WebM, or GIF. Control output quality, resolution, frame rate, and audio with Viddash." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+    <link href="/static/answer-hub.css?v=1.0" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   </head>
   <body>
@@ -55,8 +56,52 @@
           <button class="format-option" type="button" data-format="mkv"><i data-lucide="box"></i><span><strong>MKV</strong>High quality container</span></button>
           <button class="format-option" type="button" data-format="webm"><i data-lucide="globe"></i><span><strong>WEBM</strong>Web optimized</span></button>
           <button class="format-option" type="button" data-format="gif"><i data-lucide="image"></i><span><strong>GIF</strong>Short animation</span></button>
-          <div class="why-panel"><h3>Why Convert with Viddash App?</h3><ul><li>Fast and reliable conversion</li><li>High-quality output</li><li>Supports popular formats</li><li>100% free to use</li><li>No sign-up required</li></ul></div>
+          <div class="why-panel"><h3>Why Convert with Viddash App?</h3><ul><li>Six practical output formats</li><li>Resolution and frame-rate controls</li><li>Optional audio removal</li><li>Temporary file processing</li><li>Clear quality presets</li></ul></div>
         </aside>
+      </section>
+
+      <section class="app-container answer-hub" aria-labelledby="converter-answer-title">
+        <div class="answer-hub-intro">
+          <p class="answer-hub-label">Video conversion guide</p>
+          <h2 id="converter-answer-title">Choose the right video format without guessing</h2>
+          <div>
+            <p>Viddash converts uploaded videos to MP4, MOV, AVI, MKV, WebM, or GIF. MP4 is the best starting point for most sharing and playback needs, while the other formats solve more specific editing, web, compatibility, or animation tasks.</p>
+            <nav class="answer-hub-links" aria-label="Related video tools">
+              <a href="/video-compress">Reduce file size</a><a href="/video-resizer">Change aspect ratio</a><a href="/video-to-audio">Extract audio</a>
+            </nav>
+          </div>
+        </div>
+
+        <div class="answer-card-grid">
+          <article class="answer-card"><span>01 / FORMAT</span><h3>Start with where the file will be used</h3><p>Choose MP4 for phones, browsers, presentations, and social uploads. MOV is useful in Apple-centered editing workflows. WebM is designed for efficient browser playback, while MKV is a flexible container when broad device support is less important.</p></article>
+          <article class="answer-card"><span>02 / QUALITY</span><h3>Preserve detail deliberately</h3><p>High Quality keeps more visual information but creates a larger output. Balanced is suitable for everyday sharing. Small File applies stronger compression. Keep the original resolution and frame rate when you do not need to reduce dimensions or motion detail.</p></article>
+          <article class="answer-card"><span>03 / COMPATIBILITY</span><h3>Know when conversion cannot help</h3><p>A container change does not improve an already low-quality source. GIF exports cannot contain sound, and uncommon formats may still be unsupported by older applications. For the broadest compatibility, use MP4 with H.264 video and AAC audio.</p></article>
+        </div>
+
+        <div class="answer-table-wrap">
+          <table class="answer-table">
+            <caption>Video format comparison</caption>
+            <thead><tr><th>Format</th><th>Best for</th><th>Audio</th><th>Compatibility note</th></tr></thead>
+            <tbody>
+              <tr><td>MP4</td><td>General playback, sharing, and social media</td><td>Yes</td><td>Broadest practical support</td></tr>
+              <tr><td>MOV</td><td>Apple and professional editing workflows</td><td>Yes</td><td>Large files are common</td></tr>
+              <tr><td>WebM</td><td>Web pages and browser delivery</td><td>Yes</td><td>Editing-app support varies</td></tr>
+              <tr><td>MKV</td><td>Flexible desktop media storage</td><td>Yes</td><td>Not accepted by every platform</td></tr>
+              <tr><td>GIF</td><td>Short looping animations</td><td>No</td><td>Can be large for longer clips</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="answer-faq" id="video-converter-faq">
+          <div class="answer-faq-heading"><p>Direct answers</p><h2>Video converter questions</h2></div>
+          <div class="answer-faq-list">
+            <article><h3>What is the best video format for most devices?</h3><p>MP4 is the safest default for most phones, browsers, social platforms, and editing apps. Viddash exports MP4 with H.264 video and AAC audio for broad compatibility.</p></article>
+            <article><h3>Does converting a video reduce its quality?</h3><p>Video conversion usually requires re-encoding, which can introduce some quality loss. Choose High Quality and keep the original resolution and frame rate when preserving detail matters most.</p></article>
+            <article><h3>Should I choose MP4, MOV, WebM, or GIF?</h3><p>Choose MP4 for general sharing, MOV for Apple and editing workflows, WebM for web delivery, and GIF only for short silent animations. MKV is useful when container flexibility matters more than device compatibility.</p></article>
+            <article><h3>Can a GIF export include audio?</h3><p>No. GIF is an image animation format and does not support audio. Choose MP4, MOV, MKV, AVI, or WebM when the converted file needs sound.</p></article>
+            <article><h3>Are uploaded videos stored after conversion?</h3><p>No. Uploaded videos and generated conversion files are temporary and are deleted after the requested export is delivered.</p></article>
+          </div>
+        </div>
       </section>
     </main>
     {% include "partials/site-footer.html" %}

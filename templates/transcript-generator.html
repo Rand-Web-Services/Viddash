@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Video Transcript Generator - Free Online Transcriber</title>
-  <meta name="description" content="Free video transcript generator. Extract captions from YouTube, TikTok, and other videos. AI-powered audio transcription using Whisper. Download SRT, VTT, TXT, or JSON formats.">
+  <title>Video Transcript Generator for SRT, VTT, TXT & JSON - Viddash</title>
+  <meta name="description" content="Generate a transcript from a video URL or uploaded media file. Extract captions or transcribe speech, then download SRT, VTT, TXT, or JSON." />
   <link rel="canonical" href="https://viddash.app/transcript-generator" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="/static/styles.css" rel="stylesheet" />
+  <link href="/static/answer-hub.css?v=1.0" rel="stylesheet" />
   <style>
     .transcript-container {
       background: #f8f9fa;
@@ -225,6 +226,36 @@
       </div>
     </section>
 
+    <section class="answer-hub" aria-labelledby="transcript-answer-title">
+      <div class="answer-hub-intro">
+        <p class="answer-hub-label">Transcription and captions guide</p>
+        <h2 id="transcript-answer-title">Turn speech into the format your next step needs</h2>
+        <div>
+          <p>Viddash first checks a video for existing captions and otherwise uses speech recognition on its audio. The right export depends on whether you are editing subtitles, embedding captions on the web, reading plain text, or sending timed segments into another application.</p>
+          <nav class="answer-hub-links" aria-label="Related transcript tools"><a href="/audio-editor">Clean speech audio</a><a href="/video-to-audio">Extract an audio file</a><a href="/video-clipper">Cut a source clip</a></nav>
+        </div>
+      </div>
+
+      <div class="answer-card-grid">
+        <article class="answer-card"><span>01 / SOURCE</span><h3>Use captions when they already exist</h3><p>An existing caption track is usually the fastest path and preserves the timing supplied with the source. When no captions are available, Viddash extracts the audio and creates new timed segments with speech recognition.</p></article>
+        <article class="answer-card"><span>02 / ACCURACY</span><h3>Audio quality determines the review workload</h3><p>Clear microphones, one speaker at a time, low background noise, and a correctly selected language improve results. Crosstalk, music, heavy accents, and specialist names require more manual review. Important transcripts should always be checked against the recording.</p></article>
+        <article class="answer-card"><span>03 / OUTPUT</span><h3>Choose timing only when you need it</h3><p>SRT and VTT preserve timed caption cues. TXT removes timing for reading, editing, or summarizing. JSON keeps structured transcript and segment data for software workflows. Selecting the right format avoids cleanup after download.</p></article>
+      </div>
+
+      <div class="answer-table-wrap">
+        <table class="answer-table">
+          <caption>Transcript export format comparison</caption>
+          <thead><tr><th>Format</th><th>Timing</th><th>Best for</th></tr></thead>
+          <tbody>
+            <tr><td>SRT</td><td>Timed subtitle cues</td><td>Video editors and subtitle uploads</td></tr>
+            <tr><td>VTT</td><td>Timed web cues</td><td>HTML5 video and browser players</td></tr>
+            <tr><td>TXT</td><td>No timing</td><td>Reading, notes, and text editing</td></tr>
+            <tr><td>JSON</td><td>Structured segments</td><td>Applications, automation, and data processing</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- FAQ -->
     <section class="mt-5">
       <h2 class="h4 mb-4">Frequently Asked Questions</h2>
@@ -237,60 +268,55 @@
           </h2>
           <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
             <div class="accordion-body">
-              We support any video platform that yt-dlp can handle, including YouTube, TikTok, Facebook, Instagram, X/Twitter, and many others.
+              Viddash supports local audio and video uploads plus URLs from platforms handled by the downloader, including YouTube, TikTok, Facebook, Instagram, and X. A source must be accessible and permitted for you to process.
             </div>
           </div>
         </div>
         <div class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-              How accurate is the transcription?
+              How accurate is automatic transcription?
             </button>
           </h2>
           <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
             <div class="accordion-body">
-              When captions are available, we extract them directly with 100% accuracy. For audio transcription, accuracy depends on audio quality and language. Whisper typically achieves 95%+ accuracy for clear English audio.
+              Accuracy depends on microphone quality, background noise, speaker overlap, accents, language, and specialist vocabulary. Clear speech with little background noise produces the strongest result and every important transcript should be reviewed.
             </div>
           </div>
         </div>
         <div class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-              How long does it take?
+              How long does transcription take?
             </button>
           </h2>
           <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
             <div class="accordion-body">
-              Caption extraction is instant (seconds). Audio transcription takes 1-2 minutes per 10 minutes of video on average.
+              Existing caption tracks can be extracted quickly. Speech recognition takes longer and processing time depends on recording length, audio quality, server load, and the available hardware.
             </div>
           </div>
         </div>
         <div class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-              What's the difference between the export formats?
+              Which transcript format should I download?
             </button>
           </h2>
           <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
             <div class="accordion-body">
-              <ul class="mb-0">
-                <li><strong>JSON:</strong> Full data with timing info for each word/segment</li>
-                <li><strong>SRT:</strong> Standard subtitle format, compatible with video editors</li>
-                <li><strong>VTT:</strong> Web video text tracks (for embedding in HTML5 video)</li>
-                <li><strong>TXT:</strong> Plain text, just the words without timing</li>
-              </ul>
+              Use SRT for most video editors and subtitle uploads, VTT for HTML5 web video, TXT for a readable transcript without timing, and JSON when an application needs structured segments and timestamps.
             </div>
           </div>
         </div>
         <div class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
-              Can I transcribe private videos?
+              Can I transcribe a private video?
             </button>
           </h2>
           <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
             <div class="accordion-body">
-              Yes! If you have access to the video, you can paste your session cookies in the Advanced Options. We support YouTube, Facebook, and other platforms' authentication cookies.
+              You can process a private source only when you are authorized to access it. For supported URL sources, session cookies can provide that access; local files can be uploaded directly from your device.
             </div>
           </div>
         </div>
