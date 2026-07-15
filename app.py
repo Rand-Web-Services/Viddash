@@ -22,6 +22,7 @@ import hashlib
 import math
 import time
 import threading
+from collections import Counter
 from html import escape, unescape
 from markupsafe import Markup
 from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
@@ -137,6 +138,7 @@ PUBLIC_PAGES = {
     "video-clipper": "video-clipper.html",
     "video-thumbnails": "video-thumbnails.html",
     "transcript-generator": "transcript-generator.html",
+    "youtube-transcript-generator": "youtube-transcript-generator.html",
 }
 
 SEO_NOINDEX_PAGES = {"login", "signup", "api-documentation"}
@@ -157,6 +159,7 @@ SEO_TOOL_PAGES = {
     "video-clipper": {"category": "MultimediaApplication", "free": False},
     "video-thumbnails": {"category": "MultimediaApplication", "free": False},
     "transcript-generator": {"category": "MultimediaApplication", "free": False},
+    "youtube-transcript-generator": {"category": "MultimediaApplication", "free": True},
     "utm-builder": {"category": "BusinessApplication", "free": False},
 }
 
@@ -269,6 +272,28 @@ SEO_PAGE_FAQS = {
         (
             "Does Viddash keep uploaded videos?",
             "No. The source and resized output are temporary processing files and are deleted after the export is delivered.",
+        ),
+    ],
+    "youtube-transcript-generator": [
+        (
+            "How do I get a transcript from a YouTube video?",
+            "Paste a public YouTube video URL and choose a caption language. Viddash retrieves an available caption track, removes rolling-caption duplication, and builds a searchable transcript linked to the original timestamps.",
+        ),
+        (
+            "What makes Viddash Transcript Studio different?",
+            "Every paragraph, chapter draft, and key moment keeps its source timestamp. You can search the transcript, jump to the exact moment on YouTube, inspect keywords and reading time, and export standard caption formats.",
+        ),
+        (
+            "Can Viddash transcribe a YouTube video without captions?",
+            "Pro accounts can fall back to speech recognition when a usable caption track is unavailable. Free processing uses available manual or automatic YouTube captions.",
+        ),
+        (
+            "Are the suggested chapters and key moments AI-generated?",
+            "They are extractive drafts calculated from transcript timing, recurring keywords, and representative source segments. They do not invent new claims, and each suggestion links back to the source moment for review.",
+        ),
+        (
+            "How many YouTube transcripts can a free account generate?",
+            "Free accounts can generate three successful YouTube transcript projects per day from videos with available captions. Failed requests do not consume the allowance.",
         ),
     ],
 }
@@ -1169,6 +1194,20 @@ def get_audio_edits_used_today(user_id: int) -> int:
         ))
 
 
+def get_youtube_transcripts_used_today(user_id: int) -> int:
+    day_start = datetime.utcnow().date().isoformat() + "T00:00:00"
+    with get_db() as conn:
+        return int(scalar(
+            conn,
+            """
+            SELECT COUNT(*)
+            FROM user_activity
+            WHERE user_id = ? AND action = ? AND status = ? AND created_at >= ?
+            """,
+            (user_id, "media.youtube_transcript", "success", day_start),
+        ))
+
+
 def scalar(conn, sql: str, params=(), default=0):
     row = conn.execute(sql, params).fetchone()
     if not row:
@@ -1729,7 +1768,11 @@ def _image_ext_from_format(fmt: str) -> str:
     return fmt
 
 
-def extract_captions_from_video(url: str, cookie_string: str | None = None) -> dict:
+def extract_captions_from_video(
+    url: str,
+    cookie_string: str | None = None,
+    preferred_language: str | None = None,
+) -> dict:
     """Extract captions/subtitles from video using yt-dlp.
     
     Returns: {
@@ -1767,43 +1810,67 @@ def extract_captions_from_video(url: str, cookie_string: str | None = None) -> d
         subtitles = data.get("subtitles", {})
         automatic_captions = data.get("automatic_captions", {})
         duration = data.get("duration")
+        video_meta = {
+            "id": data.get("id"),
+            "title": data.get("title"),
+            "channel": data.get("channel") or data.get("uploader"),
+            "thumbnail": data.get("thumbnail"),
+            "webpage_url": data.get("webpage_url") or url,
+            "duration": duration,
+        }
         
+        candidates = []
+        for caption_type, tracks in (("manual", subtitles), ("automatic", automatic_captions)):
+            for lang, formats in tracks.items():
+                vtt = next((item for item in formats if item.get("ext") == "vtt" and item.get("url")), None)
+                if vtt:
+                    candidates.append({"lang": lang, "type": caption_type, "url": vtt["url"]})
+
+        requested = (preferred_language or "").lower()
+
+        def candidate_priority(item):
+            lang = str(item["lang"]).lower()
+            exact_language = bool(requested) and (lang == requested or lang.startswith(requested + "-"))
+            english = lang in {"en", "en-us", "en-gb"}
+            return (
+                0 if exact_language else 1,
+                0 if item["type"] == "manual" else 1,
+                0 if english else 1,
+            )
+
         captions = []
-        
-        # Try manual subtitles first, then automatic
-        for lang, caps_list in subtitles.items():
-            for cap in caps_list:
-                if cap.get("ext") == "vtt" and cap.get("url"):
-                    try:
-                        resp = requests.get(cap["url"], timeout=30)
-                        if resp.ok:
-                            captions.append({
-                                "lang": lang,
-                                "type": "manual",
-                                "data": resp.text
-                            })
-                    except Exception:
-                        pass
-        
-        if not captions:
-            for lang, caps_list in automatic_captions.items():
-                for cap in caps_list:
-                    if cap.get("ext") == "vtt" and cap.get("url"):
-                        try:
-                            resp = requests.get(cap["url"], timeout=30)
-                            if resp.ok:
-                                captions.append({
-                                    "lang": lang,
-                                    "type": "automatic",
-                                    "data": resp.text
-                                })
-                        except Exception:
-                            pass
+        # Signed caption URLs can occasionally be stale or throttled. Try a small
+        # prioritized fallback set without downloading every translated track.
+        for candidate in sorted(candidates, key=candidate_priority)[:3]:
+            try:
+                resp = requests.get(candidate["url"], timeout=10)
+                caption_data = resp.text.strip() if resp.ok else ""
+                if caption_data:
+                    captions.append({
+                        "lang": candidate["lang"],
+                        "type": candidate["type"],
+                        "data": caption_data,
+                    })
+                    break
+            except requests.RequestException:
+                continue
         
         if captions:
-            return {"success": True, "captions": captions, "duration": duration, "error": None}
+            return {
+                "success": True,
+                "captions": captions,
+                "duration": duration,
+                "video": video_meta,
+                "error": None,
+            }
         else:
-            return {"success": False, "captions": [], "duration": duration, "error": "No captions found for this video"}
+            return {
+                "success": False,
+                "captions": [],
+                "duration": duration,
+                "video": video_meta,
+                "error": "No captions found for this video",
+            }
     
     except subprocess.TimeoutExpired:
         return {"success": False, "captions": [], "duration": None, "error": "Request timed out"}
@@ -2627,6 +2694,11 @@ def page_utm_builder():
 @app.get("/transcript-generator")
 def page_transcript_generator():
     return render_public_page("transcript-generator.html", "transcript-generator")
+
+
+@app.get("/youtube-transcript-generator")
+def page_youtube_transcript_generator():
+    return render_public_page("youtube-transcript-generator.html", "youtube-transcript-generator")
 
 
 @app.post("/api/resolve")
@@ -5081,7 +5153,7 @@ def transcribe():
     
     try:
         # Step 1: Try caption extraction (fast)
-        captions_result = extract_captions_from_video(url, cookie_string)
+        captions_result = extract_captions_from_video(url, cookie_string, language)
         
         if captions_result["success"] and captions_result["captions"]:
             # Found captions! Convert to plain text or requested format
@@ -5269,6 +5341,284 @@ def _timecode_to_seconds(timecode: str) -> float:
         return hours * 3600 + minutes * 60 + secs
     except Exception:
         return 0.0
+
+
+TRANSCRIPT_STOP_WORDS = {
+    "about", "after", "again", "also", "because", "been", "before", "being",
+    "between", "both", "could", "does", "doing", "from", "going", "have", "here",
+    "into", "just", "like", "more", "most", "other", "over", "really", "should",
+    "some", "such", "than", "that", "their", "them", "then", "there", "these",
+    "they", "this", "those", "through", "very", "want", "what", "when", "where",
+    "which", "while", "with", "would", "your", "youre", "were", "will", "yeah",
+    "okay", "right", "thing", "things", "think", "know", "video", "today",
+}
+
+
+def _clean_caption_text(text: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", unescape(text or ""))
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _remove_caption_overlap(previous: str, current: str) -> str:
+    previous_words = previous.split()
+    current_words = current.split()
+    previous_keys = [re.sub(r"\W+", "", word).lower() for word in previous_words]
+    current_keys = [re.sub(r"\W+", "", word).lower() for word in current_words]
+    max_overlap = min(len(previous_keys), len(current_keys), 30)
+    for size in range(max_overlap, 0, -1):
+        if previous_keys[-size:] == current_keys[:size]:
+            return " ".join(current_words[size:]).strip()
+    return current
+
+
+def normalize_transcript_segments(segments: list) -> list:
+    normalized = []
+    for raw in sorted(segments or [], key=lambda item: float(item.get("start", 0))):
+        text = _clean_caption_text(str(raw.get("text") or ""))
+        if not text:
+            continue
+        if normalized:
+            recent_transcript = " ".join(item["text"] for item in normalized[-5:])
+            text = _remove_caption_overlap(recent_transcript, text)
+        if not text:
+            continue
+        start = max(0.0, float(raw.get("start", 0)))
+        end = max(start, float(raw.get("end", start)))
+        normalized.append({"id": len(normalized) + 1, "start": start, "end": end, "text": text})
+    return normalized
+
+
+def _transcript_words(text: str) -> list[str]:
+    return re.findall(r"[A-Za-z0-9][A-Za-z0-9'-]*", (text or "").lower())
+
+
+def _chapter_title(segments: list, keyword_counts: Counter) -> str:
+    if not segments:
+        return "Untitled section"
+    representative = max(
+        segments,
+        key=lambda segment: sum(keyword_counts.get(word, 0) for word in _transcript_words(segment["text"])),
+    )["text"]
+    representative = re.sub(
+        r"^(so|and|but|okay|now|well|today|in this video|we are going to|we're going to)\b[,:\s-]*",
+        "",
+        representative,
+        flags=re.IGNORECASE,
+    )
+    words = representative.strip(" .,!?:;-\"").split()
+    title = " ".join(words[:9]) or "Key discussion"
+    if len(title) > 64:
+        title = title[:61].rsplit(" ", 1)[0] + "..."
+    return title[0].upper() + title[1:] if title else "Key discussion"
+
+
+def build_transcript_intelligence(segments: list, duration: float | None = None) -> dict:
+    segments = normalize_transcript_segments(segments)
+    transcript = " ".join(segment["text"] for segment in segments).strip()
+    words = _transcript_words(transcript)
+    meaningful = [
+        word for word in words
+        if len(word) >= 4 and word not in TRANSCRIPT_STOP_WORDS and not word.isdigit()
+    ]
+    counts = Counter(meaningful)
+    keywords = [
+        {"term": term, "count": count}
+        for term, count in counts.most_common(12)
+    ]
+
+    paragraphs = []
+    current = None
+    for segment in segments:
+        segment_words = len(_transcript_words(segment["text"]))
+        should_break = (
+            current is None
+            or segment["start"] - current["end"] > 3
+            or current["end"] - current["start"] >= 42
+            or current["word_count"] >= 80
+        )
+        if should_break:
+            current = {
+                "start": segment["start"],
+                "end": segment["end"],
+                "text": segment["text"],
+                "word_count": segment_words,
+            }
+            paragraphs.append(current)
+        else:
+            current["end"] = segment["end"]
+            current["text"] += " " + segment["text"]
+            current["word_count"] += segment_words
+    for paragraph in paragraphs:
+        paragraph.pop("word_count", None)
+
+    scored = []
+    for segment in segments:
+        segment_words = _transcript_words(segment["text"])
+        if len(segment_words) < 5:
+            continue
+        score = sum(counts.get(word, 0) for word in segment_words) / math.sqrt(len(segment_words))
+        if segment["text"].rstrip().endswith((".", "?", "!")):
+            score += 1
+        scored.append((score, segment))
+    key_moments = []
+    for _, segment in sorted(scored, key=lambda item: item[0], reverse=True):
+        if any(abs(segment["start"] - item["start"]) < 35 for item in key_moments):
+            continue
+        key_moments.append({
+            "start": segment["start"],
+            "end": segment["end"],
+            "text": segment["text"][:280],
+        })
+        if len(key_moments) >= 6:
+            break
+    key_moments.sort(key=lambda item: item["start"])
+
+    total_duration = float(duration or (segments[-1]["end"] if segments else 0))
+    target_chapters = max(1, min(8, math.ceil(total_duration / 240))) if total_duration else 0
+    chapter_span = total_duration / target_chapters if target_chapters else 0
+    chapters = []
+    for index in range(target_chapters):
+        start = index * chapter_span
+        end = total_duration if index == target_chapters - 1 else (index + 1) * chapter_span
+        chapter_segments = [segment for segment in segments if start <= segment["start"] < end]
+        if not chapter_segments:
+            continue
+        chapters.append({
+            "start": chapter_segments[0]["start"],
+            "end": chapter_segments[-1]["end"],
+            "title": _chapter_title(chapter_segments, counts),
+            "draft": True,
+        })
+
+    speaking_minutes = total_duration / 60 if total_duration else 0
+    return {
+        "transcript": transcript,
+        "segments": segments,
+        "paragraphs": paragraphs,
+        "chapters": chapters,
+        "key_moments": key_moments,
+        "keywords": keywords,
+        "stats": {
+            "words": len(words),
+            "reading_minutes": max(1, math.ceil(len(words) / 200)) if words else 0,
+            "speaking_wpm": round(len(words) / speaking_minutes) if speaking_minutes else 0,
+            "duration_seconds": round(total_duration, 2),
+        },
+    }
+
+
+def _select_caption(captions: list, language: str | None) -> dict | None:
+    if not captions:
+        return None
+    requested = (language or "").lower()
+    if requested:
+        for caption in captions:
+            caption_language = str(caption.get("lang") or "").lower()
+            if caption_language == requested or caption_language.startswith(requested + "-"):
+                return caption
+    for caption in captions:
+        if str(caption.get("lang") or "").lower() in {"en", "en-us", "en-gb"}:
+            return caption
+    return captions[0]
+
+
+@app.post("/api/youtube-transcript-studio")
+def youtube_transcript_studio():
+    user = get_current_user()
+    if not user:
+        return api_error("Log in to create a YouTube transcript project.", 401, "login_required")
+
+    free_daily_limit = 3
+    used_today = get_youtube_transcripts_used_today(user["id"]) if user["plan"] == "free" else 0
+    if user["plan"] == "free" and used_today >= free_daily_limit:
+        return jsonify({
+            "error": "free_limit_reached",
+            "message": "You have used all 3 free YouTube transcript projects for today. Try again tomorrow or upgrade for unrestricted processing.",
+            "limit": free_daily_limit,
+            "used": used_today,
+            "pricing_url": url_for("page_pricing"),
+        }), 429
+
+    payload = request.get_json(silent=True) or {}
+    url = (payload.get("url") or "").strip()
+    language = (payload.get("language") or "").strip() or None
+    cookie_string = (payload.get("cookies") or "").strip() or None
+    try:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower().rstrip(".")
+        is_youtube = hostname == "youtu.be" or hostname == "youtube.com" or hostname.endswith(".youtube.com")
+        if parsed.scheme not in {"http", "https"} or not is_youtube:
+            return jsonify({"error": "invalid_youtube_url", "message": "Paste a valid YouTube video URL."}), 400
+        if is_private_host(hostname):
+            return jsonify({"error": "Target not allowed"}), 403
+
+        captions_result = extract_captions_from_video(url, cookie_string, language)
+        video = captions_result.get("video") or {"webpage_url": url, "duration": captions_result.get("duration")}
+        duration = float(video.get("duration") or 0)
+        if duration > 4 * 60 * 60:
+            return jsonify({"error": "video_too_long", "message": "Videos longer than four hours are not supported."}), 400
+
+        caption = _select_caption(captions_result.get("captions") or [], language)
+        if caption:
+            source = "manual_captions" if caption.get("type") == "manual" else "automatic_captions"
+            source_label = "Creator captions" if source == "manual_captions" else "YouTube automatic captions"
+            segments = _parse_vtt_to_segments(caption["data"])
+            detected_language = caption.get("lang")
+        elif user["plan"] != "free":
+            whisper_result = transcribe_video_audio(url, cookie_string, language)
+            if not whisper_result.get("success"):
+                return jsonify({"error": "transcription_failed", "message": whisper_result.get("error") or "Could not transcribe this video."}), 500
+            source = "speech_recognition"
+            source_label = "Viddash speech recognition"
+            segments = whisper_result.get("segments") or []
+            detected_language = whisper_result.get("language")
+        else:
+            return jsonify({
+                "error": "captions_unavailable",
+                "message": "This video has no usable caption track. Pro can create a transcript from the audio with speech recognition.",
+                "pricing_url": url_for("page_pricing"),
+            }), 422
+
+        intelligence = build_transcript_intelligence(segments, duration)
+        if not intelligence["segments"] or not intelligence["transcript"]:
+            return jsonify({"error": "empty_transcript", "message": "A usable transcript could not be generated from this video."}), 422
+
+        video_id = video.get("id")
+        canonical_video_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else video.get("webpage_url") or url
+        remaining = None if user["plan"] != "free" else max(0, free_daily_limit - used_today - 1)
+        record_user_activity(
+            user["id"],
+            "media.youtube_transcript",
+            "Generated a source-linked YouTube transcript project.",
+            "success",
+            {
+                "language": detected_language,
+                "source": source,
+                "video_id": video_id,
+                "words": intelligence["stats"]["words"],
+            },
+        )
+        return jsonify({
+            "success": True,
+            "video": {
+                "id": video_id,
+                "title": video.get("title") or "YouTube video",
+                "channel": video.get("channel") or "YouTube",
+                "thumbnail": video.get("thumbnail"),
+                "url": canonical_video_url,
+                "duration": duration,
+            },
+            "source": source,
+            "source_label": source_label,
+            "language": detected_language,
+            "remaining_free_today": remaining,
+            **intelligence,
+        })
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "timeout", "message": "YouTube took too long to respond. Please try again."}), 504
+    except Exception:
+        logger.exception("YouTube Transcript Studio failed")
+        return jsonify({"error": "transcript_failed", "message": "The transcript project could not be generated."}), 500
 
 
 @app.post("/api/transcribe-file")

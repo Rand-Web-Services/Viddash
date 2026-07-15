@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="{{ current_locale }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>YouTube Transcript Generator with Timestamps & Chapters - Viddash</title>
+    <meta name="description" content="Generate a searchable YouTube transcript with clickable timestamps, chapter drafts, key moments, keywords, and SRT, VTT, TXT, or JSON exports." />
+    <link rel="canonical" href="https://viddash.app/youtube-transcript-generator" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+    <link href="/static/styles.css?v=2.2" rel="stylesheet" />
+    <link href="/static/youtube-transcript.css?v=1.0" rel="stylesheet" />
+  </head>
+  <body class="yt-studio-page">
+    {% include "partials/site-header.html" %}
+
+    <main>
+      <section class="yt-hero app-container">
+        <div class="yt-hero-copy">
+          <p class="yt-eyebrow"><span></span> YouTube Transcript Studio</p>
+          <h1>Every word,<br><em>backed by a moment.</em></h1>
+          <p>Generate a searchable transcript, then jump from every paragraph, chapter draft, and key quote to the exact timestamp in the original YouTube video.</p>
+          <div class="yt-proof-row">
+            <span><i data-lucide="link-2"></i> Source-linked</span>
+            <span><i data-lucide="captions"></i> Caption-first</span>
+            <span><i data-lucide="download"></i> 4 export formats</span>
+          </div>
+        </div>
+
+        <div class="yt-input-card">
+          <div class="yt-card-top"><span>NEW PROJECT</span><i data-lucide="youtube"></i></div>
+          <form id="youtubeTranscriptForm">
+            <label for="youtubeUrl">YouTube video URL</label>
+            <div class="yt-url-field">
+              <i data-lucide="link"></i>
+              <input id="youtubeUrl" type="url" placeholder="https://youtube.com/watch?v=..." required />
+            </div>
+            <div class="yt-form-row">
+              <label for="captionLanguage"><span>Caption language</span>
+                <select id="captionLanguage">
+                  <option value="">Best available</option>
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                  <option value="pt">Portuguese</option>
+                  <option value="it">Italian</option>
+                  <option value="ja">Japanese</option>
+                  <option value="ko">Korean</option>
+                </select>
+              </label>
+              <div class="yt-allowance"><span>FREE PLAN</span><strong>3 projects / day</strong></div>
+            </div>
+            <button id="generateButton" type="submit"><span>Build transcript project</span><i data-lucide="arrow-up-right"></i></button>
+            <div id="studioProgress" class="yt-progress" hidden><span></span></div>
+            <p id="studioStatus" class="yt-status" role="status"></p>
+          </form>
+          <p class="yt-card-note"><i data-lucide="shield-check"></i> Use videos you are authorized to process. Failed requests do not use your allowance.</p>
+        </div>
+      </section>
+
+      <section id="studioResult" class="yt-result app-container" hidden>
+        <header class="result-video-card">
+          <img id="resultThumbnail" alt="" />
+          <div>
+            <span id="resultSource" class="source-badge"></span>
+            <h2 id="resultTitle"></h2>
+            <p><span id="resultChannel"></span><span id="resultLanguage"></span></p>
+          </div>
+          <a id="watchVideo" target="_blank" rel="noopener">Watch source <i data-lucide="external-link"></i></a>
+        </header>
+
+        <div class="studio-stats" aria-label="Transcript statistics">
+          <div><span>Words</span><strong id="statWords">0</strong></div>
+          <div><span>Read time</span><strong id="statReading">0 min</strong></div>
+          <div><span>Speaking pace</span><strong id="statPace">0 wpm</strong></div>
+          <div><span>Duration</span><strong id="statDuration">00:00</strong></div>
+        </div>
+
+        <div class="studio-shell">
+          <aside class="studio-sidebar">
+            <p>PROJECT VIEWS</p>
+            <button class="active" type="button" data-view="transcript"><i data-lucide="align-left"></i><span>Transcript</span></button>
+            <button type="button" data-view="chapters"><i data-lucide="list-tree"></i><span>Chapter drafts</span></button>
+            <button type="button" data-view="moments"><i data-lucide="quote"></i><span>Key moments</span></button>
+            <div class="keyword-panel"><p>TOP KEYWORDS</p><div id="keywordList"></div></div>
+          </aside>
+
+          <div class="studio-content">
+            <div class="studio-toolbar">
+              <label class="transcript-search"><i data-lucide="search"></i><input id="transcriptSearch" type="search" placeholder="Search this transcript" /></label>
+              <div class="export-menu">
+                <button id="copyCurrent" type="button"><i data-lucide="copy"></i> Copy</button>
+                <select id="exportFormat" aria-label="Export format"><option value="txt">TXT</option><option value="srt">SRT</option><option value="vtt">VTT</option><option value="json">JSON</option><option value="chapters">Chapters</option></select>
+                <button id="downloadProject" class="download-project" type="button"><i data-lucide="download"></i> Export</button>
+              </div>
+            </div>
+            <div id="searchSummary" class="search-summary"></div>
+            <div id="transcriptView" class="project-view active"></div>
+            <div id="chaptersView" class="project-view"></div>
+            <div id="momentsView" class="project-view"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="yt-difference app-container" aria-labelledby="difference-title">
+        <p class="yt-eyebrow"><span></span> The useful difference</p>
+        <div class="difference-heading"><h2 id="difference-title">A transcript you can verify, navigate, and reuse</h2><p>Most transcript tools stop at a wall of text. Viddash keeps the source relationship intact and turns the transcript into a practical research and editing workspace.</p></div>
+        <div class="difference-grid">
+          <article><span>01</span><i data-lucide="mouse-pointer-2"></i><h3>Click back to context</h3><p>Every transcript block and extracted moment opens the original YouTube video at the supporting timestamp.</p></article>
+          <article><span>02</span><i data-lucide="list-tree"></i><h3>Draft chapters, not invented summaries</h3><p>Chapter suggestions use source timing and representative transcript language, making them fast to review and edit.</p></article>
+          <article><span>03</span><i data-lucide="scan-search"></i><h3>Search before you scrub</h3><p>Find a name, product, question, or phrase in seconds and jump directly to where it was spoken.</p></article>
+          <article><span>04</span><i data-lucide="file-output"></i><h3>Leave with usable files</h3><p>Export readable text, subtitle-ready SRT or VTT, structured JSON, or a YouTube chapter draft.</p></article>
+        </div>
+      </section>
+
+      <section class="yt-faq app-container" id="youtube-transcript-faq">
+        <div><p class="yt-eyebrow"><span></span> Direct answers</p><h2>YouTube transcript questions</h2></div>
+        <div class="yt-faq-list">
+          <article><h3>How do I get a transcript from a YouTube video?</h3><p>Paste a public YouTube video URL and choose a caption language. Viddash retrieves an available caption track, removes rolling-caption duplication, and builds a searchable transcript linked to the original timestamps.</p></article>
+          <article><h3>What makes Viddash Transcript Studio different?</h3><p>Every paragraph, chapter draft, and key moment keeps its source timestamp. You can search the transcript, jump to the exact moment on YouTube, inspect keywords and reading time, and export standard caption formats.</p></article>
+          <article><h3>Can Viddash transcribe a YouTube video without captions?</h3><p>Pro accounts can fall back to speech recognition when a usable caption track is unavailable. Free processing uses available manual or automatic YouTube captions.</p></article>
+          <article><h3>Are the suggested chapters and key moments AI-generated?</h3><p>They are extractive drafts calculated from transcript timing, recurring keywords, and representative source segments. They do not invent new claims, and each suggestion links back to the source moment for review.</p></article>
+          <article><h3>How many YouTube transcripts can a free account generate?</h3><p>Free accounts can generate three successful YouTube transcript projects per day from videos with available captions. Failed requests do not consume the allowance.</p></article>
+        </div>
+      </section>
+    </main>
+
+    {% include "partials/site-footer.html" %}
+    <script src="/static/pages.js?v=2.1"></script>
+    <script>
+      (() => {
+        const form = document.getElementById('youtubeTranscriptForm');
+        const urlInput = document.getElementById('youtubeUrl');
+        const button = document.getElementById('generateButton');
+        const status = document.getElementById('studioStatus');
+        const progress = document.getElementById('studioProgress');
+        const result = document.getElementById('studioResult');
+        const search = document.getElementById('transcriptSearch');
+        let project = null;
+        let activeView = 'transcript';
+
+        form.addEventListener('submit', async event => {
+          event.preventDefault();
+          const url = urlInput.value.trim();
+          if (!url) return setStatus('Paste a YouTube video URL first.', true);
+          button.disabled = true;
+          button.querySelector('span').textContent = 'Reading captions…';
+          progress.hidden = false;
+          result.hidden = true;
+          setStatus('Fetching the video, cleaning timestamps, and building source-linked insights.');
+          try {
+            const response = await fetch('/api/youtube-transcript-studio', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url, language: document.getElementById('captionLanguage').value })
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              if (window.viddashHandleApiAuth?.(payload)) throw new Error(payload.message || 'Account access required.');
+              throw new Error(payload.message || payload.error || `Request failed (${response.status}).`);
+            }
+            project = payload;
+            renderProject();
+            const allowance = project.remaining_free_today;
+            setStatus(allowance == null ? 'Transcript project ready.' : `Transcript project ready. ${allowance} free project${allowance === 1 ? '' : 's'} remaining today.`);
+          } catch (error) {
+            setStatus(error.message, true);
+          } finally {
+            button.disabled = false;
+            button.querySelector('span').textContent = 'Build transcript project';
+            progress.hidden = true;
+          }
+        });
+
+        function renderProject() {
+          document.getElementById('resultThumbnail').src = project.video.thumbnail || '/static/og-placeholder.svg';
+          document.getElementById('resultThumbnail').alt = project.video.title || 'YouTube video thumbnail';
+          document.getElementById('resultTitle').textContent = project.video.title;
+          document.getElementById('resultChannel').textContent = project.video.channel;
+          document.getElementById('resultLanguage').textContent = project.language || 'Unknown language';
+          document.getElementById('resultSource').textContent = project.source_label;
+          document.getElementById('watchVideo').href = project.video.url;
+          document.getElementById('statWords').textContent = project.stats.words.toLocaleString();
+          document.getElementById('statReading').textContent = `${project.stats.reading_minutes} min`;
+          document.getElementById('statPace').textContent = `${project.stats.speaking_wpm} wpm`;
+          document.getElementById('statDuration').textContent = formatClock(project.stats.duration_seconds);
+          document.getElementById('keywordList').innerHTML = project.keywords.map(item => `<span>${escapeHtml(item.term)} <b>${item.count}</b></span>`).join('');
+          renderTranscript();
+          renderChapters();
+          renderMoments();
+          result.hidden = false;
+          if (window.lucide) window.lucide.createIcons();
+          result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderTranscript(query = '') {
+          const normalized = query.trim().toLowerCase();
+          const paragraphs = project.paragraphs.filter(item => !normalized || item.text.toLowerCase().includes(normalized));
+          document.getElementById('searchSummary').textContent = normalized ? `${paragraphs.length} matching transcript block${paragraphs.length === 1 ? '' : 's'}` : '';
+          document.getElementById('transcriptView').innerHTML = paragraphs.map(item => `
+            <article class="transcript-block">
+              <a href="${timestampUrl(item.start)}" target="_blank" rel="noopener" title="Open this moment on YouTube">${formatClock(item.start)} <i data-lucide="play"></i></a>
+              <p>${highlight(escapeHtml(item.text), normalized)}</p>
+            </article>`).join('') || '<p class="empty-view">No transcript blocks match that search.</p>';
+          if (window.lucide) window.lucide.createIcons();
+        }
+
+        function renderChapters() {
+          document.getElementById('chaptersView').innerHTML = `
+            <div class="view-intro"><span>DRAFT OUTPUT</span><h3>Review these titles before publishing</h3><p>Chapter boundaries and titles are extractive suggestions. Each one links to the source so you can verify the topic transition.</p></div>
+            <div class="chapter-list">${project.chapters.map((chapter, index) => `
+              <article><span>${String(index + 1).padStart(2, '0')}</span><a href="${timestampUrl(chapter.start)}" target="_blank" rel="noopener">${formatClock(chapter.start)}</a><h4>${escapeHtml(chapter.title)}</h4><i data-lucide="external-link"></i></article>`).join('')}</div>`;
+        }
+
+        function renderMoments() {
+          document.getElementById('momentsView').innerHTML = `
+            <div class="view-intro"><span>EXTRACTIVE MOMENTS</span><h3>Representative lines worth reviewing</h3><p>These moments are selected from recurring transcript themes and remain quoted from the source caption track.</p></div>
+            <div class="moment-grid">${project.key_moments.map(item => `
+              <article><i data-lucide="quote"></i><p>${escapeHtml(item.text)}</p><a href="${timestampUrl(item.start)}" target="_blank" rel="noopener"><i data-lucide="play"></i>${formatClock(item.start)} on YouTube</a></article>`).join('')}</div>`;
+        }
+
+        document.querySelectorAll('[data-view]').forEach(tab => tab.addEventListener('click', () => {
+          activeView = tab.dataset.view;
+          document.querySelectorAll('[data-view]').forEach(item => item.classList.toggle('active', item === tab));
+          document.querySelectorAll('.project-view').forEach(view => view.classList.toggle('active', view.id === `${activeView}View`));
+          search.closest('label').hidden = activeView !== 'transcript';
+          document.getElementById('searchSummary').textContent = '';
+        }));
+
+        search.addEventListener('input', () => project && renderTranscript(search.value));
+        document.getElementById('copyCurrent').addEventListener('click', async event => {
+          if (!project) return;
+          const text = activeView === 'chapters' ? chaptersText() : activeView === 'moments' ? project.key_moments.map(item => `${formatClock(item.start)} ${item.text}`).join('\n\n') : project.transcript;
+          await navigator.clipboard.writeText(text);
+          const original = event.currentTarget.innerHTML;
+          event.currentTarget.textContent = 'Copied';
+          setTimeout(() => { event.currentTarget.innerHTML = original; if (window.lucide) window.lucide.createIcons(); }, 1400);
+        });
+        document.getElementById('downloadProject').addEventListener('click', () => {
+          if (!project) return;
+          const format = document.getElementById('exportFormat').value;
+          const exports = {
+            txt: [project.transcript, 'txt', 'text/plain'],
+            srt: [toSrt(), 'srt', 'text/plain'],
+            vtt: [toVtt(), 'vtt', 'text/vtt'],
+            json: [JSON.stringify(project, null, 2), 'json', 'application/json'],
+            chapters: [chaptersText(), 'chapters.txt', 'text/plain']
+          };
+          const [content, extension, type] = exports[format];
+          const blobUrl = URL.createObjectURL(new Blob([content], { type }));
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = `viddash-youtube-transcript.${extension}`;
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        });
+
+        function timestampUrl(seconds) {
+          const url = new URL(project.video.url);
+          url.searchParams.set('t', `${Math.floor(seconds)}s`);
+          return url.toString();
+        }
+        function chaptersText() { return project.chapters.map(item => `${formatClock(item.start)} ${item.title}`).join('\n'); }
+        function toSrt() { return project.segments.map((item, index) => `${index + 1}\n${formatCaptionTime(item.start, ',')} --> ${formatCaptionTime(item.end, ',')}\n${item.text}`).join('\n\n'); }
+        function toVtt() { return `WEBVTT\n\n${project.segments.map(item => `${formatCaptionTime(item.start, '.')} --> ${formatCaptionTime(item.end, '.')}\n${item.text}`).join('\n\n')}`; }
+        function formatClock(value) {
+          const seconds = Math.max(0, Math.floor(value || 0));
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          const remainder = seconds % 60;
+          return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}` : `${minutes}:${String(remainder).padStart(2, '0')}`;
+        }
+        function formatCaptionTime(value, separator) {
+          const total = Math.max(0, Number(value) || 0);
+          const hours = Math.floor(total / 3600);
+          const minutes = Math.floor((total % 3600) / 60);
+          const seconds = Math.floor(total % 60);
+          const millis = Math.floor((total % 1) * 1000);
+          return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}${separator}${String(millis).padStart(3, '0')}`;
+        }
+        function highlight(safeText, query) {
+          if (!query) return safeText;
+          const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return safeText.replace(new RegExp(`(${safeQuery})`, 'gi'), '<mark>$1</mark>');
+        }
+        function escapeHtml(value) {
+          const node = document.createElement('div');
+          node.textContent = value || '';
+          return node.innerHTML;
+        }
+        function setStatus(message, error = false) {
+          status.textContent = message;
+          status.classList.toggle('error', error);
+        }
+      })();
+    </script>
+  </body>
+</html>

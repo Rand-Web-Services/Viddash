@@ -1,6 +1,6 @@
 Flask==3.0.3
 Werkzeug==3.0.3
-yt-dlp==2025.01.26
+yt-dlp==2026.7.4
 Jinja2==3.1.4
 itsdangerous==2.2.0
 click==8.1.7
